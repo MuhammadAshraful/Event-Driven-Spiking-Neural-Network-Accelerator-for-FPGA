@@ -1,0 +1,81 @@
+classDiagram
+  class snn_fpga_accelerator {
+  }
+  class accelerator {
+  }
+  class cli {
+  }
+  class deploy {
+  }
+  class encoder {
+  }
+  class exceptions {
+  }
+  class fpga_controller {
+  }
+  class hw_accurate_simulator {
+  }
+  class layer {
+  }
+  class learning {
+  }
+  class network {
+  }
+  class neuron {
+  }
+  class pytorch_interface {
+  }
+  class pytorch_snn_layers {
+  }
+  class rtl_simulator {
+  }
+  class spike_encoding {
+  }
+  class spyketorch_compat {
+  }
+  class training {
+  }
+  class utils {
+  }
+  class xrt_backend {
+  }
+  snn_fpga_accelerator --> accelerator
+  snn_fpga_accelerator --> deploy
+  snn_fpga_accelerator --> encoder
+  snn_fpga_accelerator --> hw_accurate_simulator
+  snn_fpga_accelerator --> layer
+  snn_fpga_accelerator --> learning
+  snn_fpga_accelerator --> network
+  snn_fpga_accelerator --> neuron
+  snn_fpga_accelerator --> pytorch_interface
+  snn_fpga_accelerator --> spike_encoding
+  snn_fpga_accelerator --> spyketorch_compat
+  snn_fpga_accelerator --> training
+  snn_fpga_accelerator --> utils
+  snn_fpga_accelerator --> xrt_backend
+  accelerator --> exceptions
+  accelerator --> learning
+  accelerator --> network
+  accelerator --> pytorch_interface
+  accelerator --> spike_encoding
+  accelerator --> utils
+  accelerator --> xrt_backend
+  cli --> accelerator
+  cli --> pytorch_interface
+  cli --> spike_encoding
+  cli --> utils
+  deploy --> layer
+  deploy --> neuron
+  hw_accurate_simulator --> spike_encoding
+  hw_accurate_simulator --> utils
+  layer --> neuron
+  learning --> spike_encoding
+  learning --> utils
+  pytorch_interface --> spike_encoding
+  pytorch_interface --> utils
+  rtl_simulator --> pytorch_interface
+  rtl_simulator --> spike_encoding
+  rtl_simulator --> utils
+  utils --> spike_encoding
+  xrt_backend --> exceptions
+  learning ..> network

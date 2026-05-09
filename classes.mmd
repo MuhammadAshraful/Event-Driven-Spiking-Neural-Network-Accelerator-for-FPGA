@@ -1,0 +1,1334 @@
+classDiagram
+  class ALIF {
+    mem
+    thresh_adapt : NoneType, Optional[Tensor]
+    \_\_init\_\_(thresh: float, tau: float, tau_thresh: float, beta: float)
+    forward(x: Tensor) Tensor
+    reset_state() None
+  }
+  class ATan {
+    backward(ctx, grad_output: Tensor) Tuple[Tensor, None]
+    forward(ctx, input: Tensor, thresh: float) Tensor
+  }
+  class AXIInterface {
+    base_addr : int
+    mmio : NoneType
+    \_\_init\_\_(base_addr: int)
+    connect()
+    read(offset: int) int
+    write(offset: int, value: int)
+  }
+  class AdaptiveLearning {
+    base_config
+    current_lr
+    lr_boost : float
+    lr_decay : float
+    performance_history : deque
+    performance_threshold : float
+    update_count : int
+    \_\_init\_\_(base_config: LearningConfig)
+    adapt_learning_rate(performance_metric: float) None
+    get_current_config() LearningConfig
+  }
+  class AvgPool2d {
+  }
+  class BatchNorm {
+    bn : BatchNorm1d
+    thresh : float
+    \_\_init\_\_(num_features: int, thresh: float)
+    forward(x: Tensor) Tensor
+  }
+  class BitstreamError {
+    actual_version : Optional[str]
+    bitstream_path : Optional[str]
+    expected_version : Optional[str]
+    \_\_init\_\_(message: str, bitstream_path: Optional[str], expected_version: Optional[str], actual_version: Optional[str])
+  }
+  class CPUvsSNNComparator {
+    _encoder : NoneType
+    device : str
+    snn_model : Optional[SNNModel]
+    torch_model : Optional['nn.Module']
+    \_\_init\_\_(torch_model: Optional['nn.Module'], snn_model: Optional[SNNModel], device: str)
+    _run_cpu_inference(input_data: np.ndarray) np.ndarray
+    _run_snn_inference(input_data: np.ndarray, duration: float, max_rate: float, num_repeats: int) Tuple[np.ndarray, List['SpikeEvent']]
+    compare(input_data: np.ndarray, duration: float, max_rate: float, num_repeats: int) Dict[str, Any]
+    compare_batch(inputs: np.ndarray, labels: Optional[np.ndarray]) Dict[str, Any]
+    print_report(results: Dict[str, Any], verbose: bool) None
+    set_models(torch_model: Optional['nn.Module'], snn_model: Optional[SNNModel]) None
+  }
+  class CTEntry {
+    dst_group : int
+    dst_neuron : int
+    exc_inh : bool
+    valid : bool
+    weight : int
+    \_\_init\_\_(self, valid: bool, dst_group: int, dst_neuron: int, weight: int, exc_inh: bool) None
+  }
+  class CacheDataset {
+    cache : dict
+    dataset
+    max_cache_size : int
+    \_\_getitem\_\_(idx)
+    \_\_init\_\_(dataset, max_cache_size: int)
+    \_\_len\_\_()
+  }
+  class CocotbSimulator {
+    rtl_dir : Path
+    simulator : str
+    top_module : str
+    \_\_init\_\_(rtl_dir: Optional[str], top_module: str, simulator: str)
+    generate_makefile(output_dir: str) str
+    generate_test_template(output_dir: str) str
+  }
+  class CommunicationError {
+    device_index : Optional[int]
+    xclbin_path : Optional[str]
+    \_\_init\_\_(message: str, device_index: Optional[int], xclbin_path: Optional[str])
+  }
+  class CompiledNetwork {
+    connections : List[ConnectionInfo]
+    group_id_start : List[int]
+    groups : List[NeuronGroup]
+    max_weight_buffer_size : int
+    total_logical_neurons : int
+    \_\_init\_\_(self, groups: List[NeuronGroup], connections: List[ConnectionInfo], group_id_start: List[int], total_logical_neurons: int, max_weight_buffer_size: int) None
+    _find_group(nid: int) int
+    pack_weights(weight_dict: Dict[str, np.ndarray]) np.ndarray
+    unpack_weights(flat: np.ndarray) Dict[str, np.ndarray]
+    validate_against_hardware() List[str]
+    weight_index(pre_id: int, post_id: int) int
+  }
+  class ConfigurationError {
+    parameter : Optional[str]
+    valid_range : NoneType
+    value : NoneType
+    \_\_init\_\_(message: str, parameter: Optional[str], value, valid_range)
+  }
+  class ConnectionInfo {
+    dst_group : int
+    dst_id_start : int
+    dst_size : int
+    name : str
+    num_weights : int
+    src_group : int
+    src_id_start : int
+    src_size : int
+    weight_offset : int
+    \_\_init\_\_(self, name: str, src_group: int, dst_group: int, src_size: int, dst_size: int, weight_offset: int, num_weights: int, src_id_start: int, dst_id_start: int) None
+  }
+  class Conv2d {
+    hw_mode : bool
+    \_\_init\_\_(in_channels: int, out_channels: int, kernel_size: int, stride: int, padding: int, bias: bool, hw_mode: bool)
+    _hw_init()
+    forward(x: Tensor) Tensor
+  }
+  class CrossEntropy {
+    T : Optional[int]
+    method : str
+    \_\_init\_\_(T: Optional[int], method: str)
+    forward(spikes: Tensor, target: Tensor) Tensor
+  }
+  class Decoder {
+  }
+  class Delta {
+    prev_value : NoneType, Optional[Tensor]
+    threshold : float
+    \_\_init\_\_(T: int, threshold: float)
+    forward(x: Tensor) Tensor
+    reset()
+  }
+  class DoGKernel {
+    kernel
+    kernel_size : int
+    sigma1 : float
+    sigma2 : float
+    \_\_call\_\_() Tensor
+    \_\_init\_\_(kernel_size: int, sigma1: float, sigma2: float)
+    _create_kernel() Tensor
+  }
+  class Dropout {
+  }
+  class Encoder {
+    T : int
+    \_\_init\_\_(T: int)
+    forward(x: Tensor)* Tensor
+  }
+  class FIFOEntry {
+    dest_id : int
+    exc : bool
+    weight : int
+    \_\_init\_\_(self, dest_id: int, weight: int, exc: bool) None
+  }
+  class FPGAError {
+    context : dict
+    error_code : Optional[int]
+    message : str
+    \_\_init\_\_(message: str, error_code: Optional[int], context: dict)
+    \_\_repr\_\_()
+  }
+  class FastSigmoid {
+    backward(ctx, grad_output: Tensor) Tuple[Tensor, None]
+    forward(ctx, input: Tensor, thresh: float) Tensor
+  }
+  class Filter {
+    max_window_size
+    num_filters
+    padding
+    thresholds : NoneType
+    use_abs : bool
+    \_\_init\_\_(kernels: List, padding: Optional[int], thresholds: Optional[Union[float, List[float]]], use_abs: bool)
+    forward(x: Tensor) Tensor
+  }
+  class FixedPoint {
+    _raw : int
+    raw : int
+    \_\_add\_\_(other: 'FixedPoint') 'FixedPoint'
+    \_\_init\_\_(value: float, raw: Optional[int])
+    \_\_mul\_\_(other: 'FixedPoint') 'FixedPoint'
+    \_\_neg\_\_() 'FixedPoint'
+    \_\_repr\_\_() str
+    \_\_sub\_\_(other: 'FixedPoint') 'FixedPoint'
+    _clamp_raw(raw: int) int
+    to_float() float
+  }
+  class GaborKernel {
+    freq : float
+    gamma : float
+    kernel
+    kernel_size : int
+    psi : float
+    sigma : float
+    theta
+    \_\_call\_\_() Tensor
+    \_\_init\_\_(kernel_size: int, theta: float, sigma: float, freq: float, gamma: float, psi: float)
+    _create_kernel() Tensor
+  }
+  class HWAccurateLIFNeuron {
+    neuron_id : int
+    params
+    state
+    \_\_init\_\_(neuron_id: int, params: Optional[LIFNeuronParams])
+    _calculate_leak(v_mem: int) int
+    _saturate_16bit(value: int) int
+    get_membrane_potential() int
+    get_tau() float
+    is_refractory() bool
+    reset()
+    tick(syn_valid: bool, syn_weight: int, syn_excitatory: bool, enable: bool) bool
+  }
+  class HWAccurateSNNSimulator {
+    clock_period_ns : int
+    ct
+    current_cycle : int
+    group_sizes : list
+    groups
+    neurons_per_group
+    num_groups : int
+    num_neurons
+    router
+    spike_history : List[Tuple[int, int]]
+    stdp
+    \_\_init\_\_(num_groups: int, neurons_per_group: int, group_sizes: Optional[List[int]], neuron_params: Optional[LIFNeuronParams], stdp_config: Optional[STDPConfig], clock_period_ns: int)
+    get_membrane_potentials(group_id: int) np.ndarray
+    get_neuron_state(global_neuron_id: int) Dict
+    global_to_local(global_id: int) Tuple[int, int]
+    inject_routed_event(source_global_id: int) int
+    inject_spike(global_neuron_id: int, weight: int, exc: bool)
+    local_to_global(group_id: int, local_id: int) int
+    reset()
+    run(num_cycles: int, input_spike_train: Optional[Dict[int, List[Tuple[int, int, bool]]]]) Dict
+    set_inter_connection(src_group: int, src_neuron: int, fanout_idx: int, dst_group: int, dst_neuron: int, weight: int, exc: bool)
+    set_intra_weight(group_id: int, src: int, dst: int, weight: int, exc: bool)
+    tick(external_spikes: Optional[List[Tuple[int, int, bool]]]) List[int]
+  }
+  class HWAccurateSTDPEngine {
+    _flat_weights : Optional[np.ndarray]
+    _last_decay_time : NoneType, Optional[int]
+    _use_flat : bool
+    config
+    enabled : bool
+    id_mask
+    max_neurons : int
+    mu : int
+    post_eligibility : ndarray
+    post_traces : ndarray
+    pre_eligibility : ndarray
+    pre_traces : ndarray
+    synapses : Dict[int, List[int]]
+    update_counter : int
+    w_max : int
+    w_min : int
+    weight_updates : deque
+    weights : Optional[np.ndarray]
+    \_\_init\_\_(config: Optional[STDPConfig], max_neurons: int, id_mask: Optional[int])
+    _clip_int8_signed(v: int) int
+    _connected_posts_from_topology(pre_id: int) List[int]
+    _connected_pres_from_topology(post_id: int) List[int]
+    _saturating_add_u8(v: int, inc: int) int
+    _sync_time(timestamp: int)
+    _update_eligibility_on_post_spike(post_id: int)
+    _update_eligibility_on_pre_spike(pre_id: int)
+    add_synapse(pre_id: int, post_id: int)
+    apply_rstdp_reward(reward_signal: int, timestamp: int) List[WeightUpdate]
+    decay_all_traces()
+    decay_eligibility_traces()
+    get_pending_updates() List[WeightUpdate]
+    get_weight(pre_id: int, post_id: int) int
+    process_post_spike(neuron_id: int, timestamp: int, connected_pre_ids: Optional[List[int]]) List[WeightUpdate]
+    process_pre_spike(neuron_id: int, timestamp: int, connected_post_ids: Optional[List[int]]) List[WeightUpdate]
+    put_weight(pre_id: int, post_id: int, value: int)
+    reset()
+    set_flat_weights(flat: np.ndarray)
+    set_mu(mu_float: float)
+    set_weights(weights: np.ndarray)
+  }
+  class HWConnectivityTable {
+    max_fanout : int
+    n : int
+    num_groups : int
+    table : Dict[Tuple[int, int, int], CTEntry]
+    \_\_init\_\_(num_groups: int, neurons_per_group: int, max_fanout: int)
+    get_all_connections(src_group: int, src_neuron: int) List[CTEntry]
+    lookup(src_group: int, src_neuron: int, fanout_idx: int) CTEntry
+    reset()
+    write(src_group: int, src_neuron: int, fanout_idx: int, valid: bool, dst_group: int, dst_neuron: int, weight: int, exc_inh: bool)
+  }
+  class HWCoreGroup {
+    ST_IDLE : int
+    ST_INTRA_READ : int
+    ST_INTRA_ROUTE : int
+    ST_LEAK_CMP : int
+    ST_LEAK_RD : int
+    ST_LEAK_WR : int
+    ST_SPIKE_CMP : int
+    ST_SPIKE_RD : int
+    ST_SPIKE_WR : int
+    fifo : deque
+    group_id : int
+    n : int
+    output_spikes : deque
+    params
+    refrac : ndarray
+    total_spikes : int
+    v_mem : ndarray
+    weight_exc : ndarray
+    weights : ndarray
+    \_\_init\_\_(group_id: int, neurons_per_group: int, params: Optional[LIFNeuronParams])
+    get_membrane(nid: int) int
+    has_output_spike() bool
+    is_busy() bool
+    pop_output_spike() Optional[int]
+    process_step() List[int]
+    push_spike(dest_id: int, weight: int, exc: bool) bool
+    reset()
+    set_weight(src: int, dst: int, weight: int, exc: bool)
+  }
+  class HWEventRouter {
+    arb_pointer : int
+    ct
+    learn_spikes : deque
+    num_groups : int
+    routed_spike_count : int
+    \_\_init\_\_(num_groups: int, ct: Optional[HWConnectivityTable])
+    reset()
+    route_spikes(groups: List[HWCoreGroup]) List[Tuple[int, int]]
+  }
+  class IF {
+    mem
+    forward(x: Tensor) Tensor
+  }
+  class IcarusSimulator {
+    _precompiled_dir
+    _temp_dir : NoneType, Optional[tempfile.TemporaryDirectory]
+    compiled_binary : Optional[Path], Optional[str]
+    include_dirs : list
+    rtl_dir : Path
+    top_module : str
+    \_\_init\_\_(rtl_dir: Optional[str], top_module: str, include_dirs: Optional[List[str]])
+    _collect_rtl_files() List[Path]
+    _create_stimulus_file(spikes: List[SpikeEvent]) Path
+    _parse_output(stdout: str) List[SpikeEvent]
+    cleanup()
+    compile(output_path: Optional[str]) str
+    list_precompiled_tests() List[str]
+    run(input_spikes: List[SpikeEvent], duration_ns: int, dump_vcd: bool) RTLSimulationResult
+    run_all_tests(verbose: bool) Dict[str, Any]
+    run_precompiled_test(test_name: str) Dict[str, Any]
+  }
+  class Intensity2Latency {
+    time_steps : int
+    to_spike : bool
+    \_\_init\_\_(time_steps: int, to_spike: bool)
+    forward(x: Tensor) Tensor
+  }
+  class Izhikevich {
+    mem
+    u : NoneType, Optional[Tensor]
+    \_\_init\_\_(a: float, b: float, c: float, d: float, dt: float)
+    forward(x: Tensor) Tensor
+    reset_state() None
+  }
+  class KernelExecutionError {
+    exit_code : Optional[int]
+    kernel_name : Optional[str]
+    \_\_init\_\_(message: str, kernel_name: Optional[str], exit_code: Optional[int])
+  }
+  class LIF {
+    _hw_leak_rate : int
+    _hw_tau : float
+    _shift1 : int
+    _shift2 : int
+    _shift2_cfg : int
+    learn_tau : bool
+    mem
+    tau : Tensor
+    tau_param : Parameter
+    \_\_init\_\_(thresh: float, tau: float, reset: str, surrogate: str, scale: float, hw_mode: bool, learn_tau: bool, learn_thresh: bool)
+    _hw_leak(mem: Tensor) Tensor
+    forward(x: Tensor) Tensor
+    get_hw_config() dict
+  }
+  class LIFNeuronParams {
+    leak_rate : int
+    leak_shift1 : int
+    leak_shift2 : int
+    leak_shift2_enabled : bool
+    refractory_period : int
+    reset_potential : int
+    reset_potential_en : bool
+    tau : float
+    threshold : int
+    \_\_init\_\_(self, threshold: int, leak_rate: int, refractory_period: int, reset_potential: int, reset_potential_en: bool) None
+    from_tau(tau: float, threshold: int, refractory_period: int) 'LIFNeuronParams'
+  }
+  class LIFNeuronState {
+    refrac_counter : int
+    spike_out : bool
+    v_mem : int
+    \_\_init\_\_(self, v_mem: int, refrac_counter: int, spike_out: bool) None
+    reset()
+  }
+  class Latency {
+    normalize : bool
+    \_\_init\_\_(T: int, normalize: bool)
+    forward(x: Tensor) Tensor
+  }
+  class LatencyDecoder {
+    T : int
+    \_\_init\_\_(T: int)
+    forward(spikes: Tensor) Tensor
+  }
+  class LatencyEncoder {
+    max_delay
+    \_\_init\_\_(num_neurons: int, duration: float, max_delay: Optional[float])
+    encode(data: np.ndarray) List[SpikeEvent]
+  }
+  class LateralIntensityInhibition {
+    inhibition_kernel
+    inhibition_percents : List[float]
+    radius
+    \_\_init\_\_(inhibition_percents: List[float])
+    forward(x: Tensor) Tensor
+  }
+  class LayerConfig {
+    in_features : int
+    kernel_size : int
+    leak : int
+    out_features : int
+    padding : int
+    stride : int
+    threshold : int
+    type : str
+    weight_base_addr : int
+    weight_size : int
+    \_\_init\_\_(self, type: str, in_features: int, out_features: int, kernel_size: int, stride: int, padding: int, threshold: int, leak: int, weight_base_addr: int, weight_size: int) None
+  }
+  class LayerNorm {
+    thresh : float
+    \_\_init\_\_(normalized_shape, thresh: float)
+    forward(x: Tensor) Tensor
+  }
+  class LearningConfig {
+    a_minus : float
+    a_plus : float
+    eligibility_decay : float
+    learning_rate : float
+    reward_window : float
+    tau_minus : float
+    tau_plus : float
+    w_max : float
+    w_min : float
+    \_\_init\_\_(self, learning_rate: float, a_plus: float, a_minus: float, tau_plus: float, tau_minus: float, w_min: float, w_max: float, eligibility_decay: float, reward_window: float) None
+  }
+  class Linear {
+    hw_mode : bool
+    weight_bits : int
+    \_\_init\_\_(in_features: int, out_features: int, bias: bool, hw_mode: bool)
+    _hw_init()
+    forward(x: Tensor) Tensor
+    quantize_weights() Tensor
+  }
+  class MSE {
+    method : str
+    \_\_init\_\_(method: str)
+    forward(spikes: Tensor, target: Tensor) Tensor
+  }
+  class MaxDecoder {
+    dim : int
+    \_\_init\_\_(dim: int)
+    forward(spikes: Tensor) Tensor
+  }
+  class MaxPool2d {
+  }
+  class MemPotential {
+    \_\_init\_\_()
+    forward(mem: Tensor, target: Tensor) Tensor
+  }
+  class NetworkConfig {
+    hw_version : str
+    layers : List[LayerConfig]
+    max_neurons : int
+    timesteps : int
+    total_weights : int
+    \_\_init\_\_(self, layers: List[LayerConfig], total_weights: int, max_neurons: int, timesteps: int, hw_version: str) None
+    to_bin(path: str)
+    to_dict() dict
+    to_json(path: str) str
+  }
+  class NeuronGroup {
+    _group_index : Optional[int]
+    _id_start : Optional[int]
+    n : int
+    name : str
+    \_\_init\_\_(n: int, name: str)
+    \_\_repr\_\_()
+  }
+  class PLIF {
+    \_\_init\_\_(thresh: float, tau: float)
+  }
+  class PYNQ {
+    REG_CONFIG : int
+    REG_CONTROL : int
+    REG_SPIKE_IN : int
+    REG_SPIKE_OUT : int
+    REG_STATUS : int
+    REG_TIMESTEPS : int
+    REG_WEIGHT_ADDR : int
+    REG_WEIGHT_DATA : int
+    axi
+    bitstream : Optional[str]
+    overlay : NoneType
+    sim_mode : bool
+    \_\_init\_\_(bitstream: Optional[str], sim_mode: bool)
+    _encode_sample_to_aer(sample: np.ndarray, T: int, encoding: str, weight: int)
+    _load_bitstream()
+    close()
+    configure(config: NetworkConfig)
+    load_weights(model: nn.Module, quantize: bool)
+    run(input: Union[Tensor, np.ndarray], T: int, return_spikes: bool, encoding: str, weight: int) Union[Tensor, np.ndarray]
+  }
+  class PerformanceMonitor {
+    metrics : dict
+    start_times : dict
+    \_\_init\_\_()
+    end_timer(name: str) float
+    get_metrics() Dict[str, float]
+    log_metrics() None
+    record_metric(name: str, value: float) None
+    start_timer(name: str) None
+  }
+  class Phase {
+    freq : float
+    \_\_init\_\_(T: int, freq: float)
+    forward(x: Tensor) Tensor
+  }
+  class PiecewiseLinear {
+    backward(ctx, grad_output: Tensor) Tuple[Tensor, None]
+    forward(ctx, input: Tensor, thresh: float) Tensor
+  }
+  class Poisson {
+    rate_scale : float
+    \_\_init\_\_(T: int, rate_scale: float)
+    forward(x: Tensor) Tensor
+  }
+  class PoissonEncoder {
+    _rng
+    max_rate : float
+    min_rate : float
+    \_\_init\_\_(num_neurons: int, duration: float, max_rate: float, min_rate: float)
+    encode(data: np.ndarray) List[SpikeEvent]
+  }
+  class PopulationDecoder {
+    time_window : float
+    \_\_init\_\_(num_outputs: int, duration: float, time_window: float)
+    decode(spikes: List[SpikeEvent]) np.ndarray
+  }
+  class PyTorchFPGABridge {
+    fpga_controller
+    layer_mapping : dict
+    \_\_init\_\_(fpga_controller: SNNFPGAController)
+    benchmark_model(input_spikes: np.ndarray, num_runs: int) Dict[str, Any]
+    deploy_model(pytorch_model, input_example: np.ndarray) bool
+    forward(input_spikes: np.ndarray) np.ndarray
+  }
+  class QuantConfig {
+    activation_bits : int
+    membrane_bits : int
+    per_channel : bool
+    symmetric : bool
+    weight_bits : int
+    \_\_init\_\_(self, weight_bits: int, activation_bits: int, membrane_bits: int, symmetric: bool, per_channel: bool) None
+  }
+  class RSTDP {
+    eligibility : Dict[str, Tensor]
+    tau_e : float
+    \_\_init\_\_(model: nn.Module, config: STDPConfig, tau_e: float)
+    apply_reward(reward: float)
+    reset()
+    step(pre_spikes: Tensor, post_spikes: Tensor)
+  }
+  class RSTDPLearning {
+    config
+    eligibility_traces : defaultdict
+    reward_count : int
+    reward_history : deque
+    stdp
+    total_reward : float
+    \_\_init\_\_(config: LearningConfig)
+    _get_recent_reward(current_time: float) float
+    add_reward(reward: float, timestamp: float) None
+    add_spike(spike: SpikeEvent, is_post_synaptic: bool) None
+    compute_weight_updates(synapse_map: Dict[Tuple[int, int], float], current_time: float) List[Dict]
+    get_learning_stats() Dict
+    reset_traces() None
+    update_eligibility_traces(synapse_map: Dict[Tuple[int, int], float]) None
+  }
+  class RTLSimulationResult {
+    cycle_count : int
+    output_spikes : List[SpikeEvent]
+    register_values : Dict[str, int]
+    simulation_time_ns : int
+    waveform_file : Optional[str]
+    \_\_init\_\_(self, output_spikes: List[SpikeEvent], simulation_time_ns: int, cycle_count: int, register_values: Dict[str, int], waveform_file: Optional[str]) None
+  }
+  class RTLvsPythonComparator {
+    python_model : Optional[Any]
+    rtl_sim : Optional[IcarusSimulator]
+    \_\_init\_\_(rtl_simulator: Optional[IcarusSimulator], python_model: Optional[Any])
+    compare(input_spikes: List[SpikeEvent], duration: float) Dict[str, Any]
+    print_report(results: Dict[str, Any]) None
+  }
+  class Rate {
+    gain : float
+    \_\_init\_\_(T: int, gain: float)
+    forward(x: Tensor) Tensor
+  }
+  class RateDecoder {
+    dim : int
+    normalize : bool
+    \_\_init\_\_(dim: int, normalize: bool)
+    forward(spikes: Tensor) Tensor
+  }
+  class RateEncoder {
+    max_rate : float
+    \_\_init\_\_(num_neurons: int, duration: float, max_rate: float)
+    encode(data: np.ndarray) List[SpikeEvent]
+  }
+  class RegisterMap {
+    ap_ctrl : int
+    config_reg : int
+    ctrl_reg : int
+    encoder_base : int
+    gie : int
+    ier : int
+    isr : int
+    learning_base : int
+    mode_reg : int
+    reward_signal : int
+    spike_count_reg : int
+    status_reg : int
+    time_steps_reg : int
+    version_reg : int
+    weight_sum_reg : int
+    \_\_init\_\_(self, ap_ctrl: int, gie: int, ier: int, isr: int, ctrl_reg: int, config_reg: int, mode_reg: int, time_steps_reg: int, learning_base: int, encoder_base: int, status_reg: int, spike_count_reg: int, weight_sum_reg: int, version_reg: int, reward_signal: int) None
+  }
+  class S1C1Transform {
+    filter
+    lateral_inhibition : Optional[LateralIntensityInhibition]
+    pooling_size : int
+    pooling_stride : int
+    temporal_transform
+    timesteps : int
+    \_\_call\_\_(image: Tensor) Tensor
+    \_\_init\_\_(filter: Filter, pooling_size: int, pooling_stride: int, lateral_inhibition: Optional[LateralIntensityInhibition], timesteps: int)
+  }
+  class SConv2d {
+    conv
+    lif
+    \_\_init\_\_(in_channels: int, out_channels: int, kernel_size: int, stride: int, padding: int, bias: bool, neuron: type)
+    forward(x: Tensor) Tensor
+    reset()
+  }
+  class SLSTM {
+    c : NoneType, Optional[Tensor]
+    fc_f
+    fc_g
+    fc_i
+    fc_o
+    h : NoneType, Optional[Tensor]
+    hidden_size : int
+    lif_o
+    \_\_init\_\_(input_size: int, hidden_size: int)
+    forward(x: Tensor) Tensor
+    reset()
+  }
+  class SLinear {
+    fc
+    lif
+    \_\_init\_\_(in_features: int, out_features: int, bias: bool, neuron: type)
+    forward(x: Tensor) Tensor
+    reset()
+  }
+  class SNN {
+    export_weights(path: str) dict
+    reset()
+    run(x: Tensor, T: int, return_all: bool) Union[Tensor, List[Tensor]]
+    set_hw_mode(enabled: bool)
+  }
+  class SNNAccelerator {
+    _compiled_network : Optional[CompiledNetwork]
+    _hardware_backend : Optional[_HardwareBackend]
+    _snn_network : Optional[SNNNetwork]
+    _software_backend
+    _xrt_backend : Optional[XRTBackend]
+    _xrt_regmap : Optional[RegisterMap]
+    bitstream_path : str
+    current_timestep : int
+    encoder_config
+    fpga_ip : str
+    icarus_binary : str
+    is_running : bool
+    last_spike_time : float
+    learning_enabled : bool
+    learning_engine : Optional[Union[STDPLearning, RSTDPLearning]]
+    membrane_state : NoneType, Optional[np.ndarray]
+    network_topology : NoneType, Optional[Dict], dict
+    neuron_parameters : Dict[str, Union[int, float]]
+    num_neurons : int
+    output_queue : str
+    processing_thread : Optional[threading.Thread]
+    profiling_enabled : bool
+    simulation_backend : str
+    simulation_mode
+    snn_model : NoneType, Optional[SNNModel]
+    spike_count : int
+    spike_history : List[List[SpikeEvent]], list
+    spike_queue : str
+    timestep_dt : float
+    use_xrt : bool
+    vvp_binary : str
+    \_\_call\_\_(x: Union[List[SpikeEvent], Sequence[SpikeEvent], np.ndarray], duration: Optional[float], return_events: bool) Union[List[SpikeEvent], np.ndarray]
+    \_\_enter\_\_()
+    \_\_exit\_\_(exc_type, exc_val, exc_tb)
+    \_\_init\_\_(bitstream_path: Optional[str], fpga_ip: str, simulation_mode: bool, simulation_backend: str, icarus_binary: str, vvp_binary: str)
+    _infer_duration(events: List[SpikeEvent]) float
+    _initialize_hardware() None
+    _load_config_from_file(path: Path) Dict
+    _load_model_to_hardware(model: SNNModel) None
+    _load_weights(weights: np.ndarray) None
+    _load_weights_raw_flat(flat: np.ndarray) None
+    _normalize_spike_events(spikes: Union[List[SpikeEvent], Sequence[SpikeEvent], np.ndarray]) List[SpikeEvent]
+    _pack_spike_events(spikes: List[SpikeEvent]) bytes
+    _process_events() None
+    _read_output_spikes() List[SpikeEvent]
+    _run_simulation_xrt(duration: float, input_spikes: List[SpikeEvent], encoding_type: int, two_neuron_enable: bool, baseline: int, encoder_params: Optional[dict]) List[SpikeEvent]
+    _send_spike_to_hardware(spike_data: bytes) None
+    _spike_events_to_rates(events: List[SpikeEvent], duration: float) np.ndarray
+    _unpack_spike_events(data: bytes) List[SpikeEvent]
+    apply_reward(reward: float) None
+    configure_encoder(encoding_type: str, num_steps: int, two_neuron_enable: bool, baseline: int) None
+    configure_from_network(network: SNNNetwork, weight_dict: Optional[Dict[str, np.ndarray]]) CompiledNetwork
+    configure_learning(learning_engine: Union[STDPLearning, RSTDPLearning]) None
+    configure_network(config: Optional[Union[SNNModel, Dict, str, Path]], num_neurons: Optional[int], topology: Optional[Dict]) None
+    configure_xrt(xclbin_path: str, device_index: int, reg_map: Optional[RegisterMap]) None
+    connect() bool
+    disconnect() None
+    enable_learning(enable: bool) None
+    forward(x: Union[List[SpikeEvent], Sequence[SpikeEvent], np.ndarray], duration: Optional[float], return_events: bool) Union[List[SpikeEvent], np.ndarray]
+    get_performance_stats() Dict
+    get_spike_history() List[List[SpikeEvent]]
+    infer(input_spikes: Union[List[SpikeEvent], Sequence[SpikeEvent], np.ndarray], duration: Optional[float], return_events: bool) Union[List[SpikeEvent], np.ndarray]
+    infer_with_learning(input_spikes: Union[List[SpikeEvent], Sequence[SpikeEvent], np.ndarray], reward: Optional[float], duration: Optional[float]) np.ndarray
+    initialize(neurons_per_layer: List[int], weights: Optional[List[np.ndarray]]) None
+    load_bitstream(bitstream_path: Optional[str]) None
+    load_flat_weights(flat_weights: np.ndarray) None
+    read_flat_weights() Optional[Dict[str, np.ndarray]]
+    reset() None
+    reset_state() None
+    run_simulation(duration: float, input_spikes: List[SpikeEvent]) List[SpikeEvent]
+    send_spike_event(neuron_id: int, timestamp: float, weight: float) None
+    set_learning_parameters(learning_rate: float, stdp_window: float, a_plus: float, a_minus: float, tau_plus: int, tau_minus: int, rstdp_enable: bool, trace_decay: float, reward_scale: float) None
+    set_mode(mode: int, encoder_enable: bool) None
+    set_reward_signal(reward: int) None
+    set_simulation_steps(steps: int) None
+    start_processing() None
+    stop_processing() None
+    verify_weights() bool
+  }
+  class SNNAvgPool2d {
+    decay_factor : float
+    decay_factor_int : int
+    kernel_size : int
+    padding : int
+    pooling_window_time : int
+    spike_count
+    stride
+    threshold : float
+    threshold_int : int
+    \_\_init\_\_(kernel_size: int, stride: Optional[int], padding: int, threshold: float, decay_factor: float, pooling_window_time: int)
+    forward(x: torch.Tensor) torch.Tensor
+    get_fpga_config() Dict[str, Any]
+  }
+  class SNNConv1d {
+    decay_factor : float
+    decay_factor_int : int
+    device_id : Optional[int]
+    in_channels : int
+    kernel_size : int
+    membrane_potential : NoneType
+    out_channels : int
+    padding : int
+    spike_count
+    stride : int
+    threshold : float
+    threshold_int : int
+    weight : Parameter
+    weight_scale : int
+    \_\_init\_\_(in_channels: int, out_channels: int, kernel_size: int, stride: int, padding: int, threshold: float, decay_factor: float, device_id: Optional[int])
+    _quantize_weights() np.ndarray
+    forward(x: torch.Tensor) torch.Tensor
+    get_fpga_config() Dict[str, Any]
+  }
+  class SNNConv2d {
+    decay_factor : float
+    decay_factor_int : int
+    device_id : Optional[int]
+    in_channels : int
+    kernel_size : int
+    membrane_potential : NoneType
+    out_channels : int
+    padding : int
+    spike_count
+    stride : int
+    threshold : float
+    threshold_int : int
+    weight : Parameter
+    weight_scale : int
+    \_\_init\_\_(in_channels: int, out_channels: int, kernel_size: int, stride: int, padding: int, threshold: float, decay_factor: float, device_id: Optional[int])
+    _quantize_weights() np.ndarray
+    forward(x: torch.Tensor) torch.Tensor
+    get_fpga_config() Dict[str, Any]
+  }
+  class SNNFPGAController {
+    AXI_BASE_ADDR : int
+    LAYER_TYPES : dict
+    MAX_LAYERS : int
+    MAX_NEURONS_PER_LAYER : int
+    MAX_WEIGHTS_PER_LAYER : int
+    Overlay
+    STATUS_DONE : int
+    STATUS_ERROR : int
+    STATUS_IDLE : int
+    STATUS_PROCESSING : int
+    allocate
+    bitstream_path : Optional[str]
+    hardware_available : bool
+    is_initialized : bool
+    layer_configs : dict
+    memory_maps : dict
+    overlay
+    snn_accelerator
+    \_\_init\_\_(bitstream_path: Optional[str])
+    _calculate_output_size(input_shape: Tuple[int, ...]) int
+    _configure_avgpool2d_layer(base_addr: int, config: Dict[str, Any])
+    _configure_conv1d_layer(base_addr: int, config: Dict[str, Any])
+    _configure_conv2d_layer(base_addr: int, config: Dict[str, Any])
+    _configure_maxpool2d_layer(base_addr: int, config: Dict[str, Any])
+    _get_layer_base_address(layer_id: int) int
+    _pack_spikes(spikes: np.ndarray) np.ndarray
+    _process_on_hardware(input_spikes: np.ndarray) np.ndarray
+    _process_simulation(input_spikes: np.ndarray) np.ndarray
+    _read_register(reg_name: str) int
+    _unpack_spikes(packed_data: np.ndarray, original_shape: Tuple[int, ...]) np.ndarray
+    _write_register(reg_name: str, value: int)
+    _write_register_at_addr(addr: int, value: int)
+    configure_layer(layer_id: int, config: Dict[str, Any]) bool
+    configure_network(network_config: Dict[str, Any]) bool
+    get_performance_stats() Dict[str, Any]
+    initialize_hardware() bool
+    process_spike_data(input_spikes: np.ndarray) np.ndarray
+    reset_accelerator()
+    shutdown()
+  }
+  class SNNLayer {
+    bias : NoneType
+    input_size : int
+    layer_config : dict
+    layer_type : str
+    neuron_params : dict
+    output_size : int
+    weights : NoneType
+    \_\_init\_\_(input_size: int, output_size: int, layer_type: str)
+    set_neuron_parameters(threshold: float, leak_rate: float, refractory_period: int)
+    set_weights(weights: np.ndarray, bias: Optional[np.ndarray])
+  }
+  class SNNMaxPool2d {
+    kernel_size : int
+    padding : int
+    pooling_window_time : int
+    spike_count
+    stride
+    winner_take_all : bool
+    \_\_init\_\_(kernel_size: int, stride: Optional[int], padding: int, winner_take_all: bool, pooling_window_time: int)
+    forward(x: torch.Tensor) torch.Tensor
+    get_fpga_config() Dict[str, Any]
+  }
+  class SNNModel {
+    layers : list
+    name : str
+    neuron_id_map : dict
+    total_neurons : int
+    \_\_init\_\_(name: str)
+    add_layer(layer: SNNLayer) None
+    get_layer_neuron_ids(layer_idx: int) Tuple[int, int]
+    load_weights(filepath: str) None
+    save_weights(filepath: str) None
+  }
+  class SNNNetwork {
+    _compiled : Optional[CompiledNetwork]
+    _groups : List[NeuronGroup]
+    _synapses : List[Synapses]
+    groups : List[NeuronGroup]
+    synapses : List[Synapses]
+    \_\_init\_\_()
+    add_group(group: NeuronGroup) NeuronGroup
+    add_synapses(syn: Synapses) Synapses
+    compile() CompiledNetwork
+    from_config() 'SNNNetwork'
+    summary() str
+  }
+  class SNNSequential {
+    layers : ModuleList
+    \_\_init\_\_()
+    forward(x: torch.Tensor) torch.Tensor
+    get_fpga_config() Dict[str, Any]
+  }
+  class SRNN {
+    fc_in
+    fc_rec
+    hidden_size : int
+    input_size : int
+    lif
+    spk : NoneType, Optional[Tensor]
+    \_\_init\_\_(input_size: int, hidden_size: int, neuron: type)
+    forward(x: Tensor) Tensor
+    reset()
+  }
+  class STDP {
+    conv
+    learning_rate : list
+    lower_bound : float
+    upper_bound : float
+    use_stabilizer : bool
+    \_\_init\_\_(conv_layer: STDPConvolution, learning_rate: Tuple[float, float], use_stabilizer: bool, lower_bound: float, upper_bound: float)
+    forward(input_spikes: Tensor, potentials: Tensor, output_spikes: Tensor, winners: List[Tuple[int, int, int]], winner_fire_time: Optional[float])
+    get_pre_post_ordering(input_spikes: Tensor, output_spikes: Tensor, winners: List[Tuple[int, int, int]], winner_fire_time: Optional[float]) List[Tensor]
+    update_all_learning_rate(ap: float, an: float)
+    update_learning_rate(feature: int, ap: float, an: float)
+  }
+  class STDP {
+    config
+    connections : list
+    model : Module
+    post_traces : Dict[str, deque]
+    pre_traces : Dict[str, deque]
+    \_\_init\_\_(model: nn.Module, connections: List[Tuple[str, str]], config: STDPConfig)
+    _auto_detect_connections() List[Tuple[str, str]]
+    _compute_stdp(pre: Tensor, post: Tensor) Tensor
+    _compute_stdp_from_traces(pre_name: str, post_name: str) Tensor
+    record_spikes(name: str, spikes: Tensor, is_pre: bool)
+    reset()
+    step(pre_spikes: Tensor, post_spikes: Tensor)
+  }
+  class STDPConfig {
+    _a_minus_raw : int
+    _a_plus_raw : int
+    _learning_rate_raw : int
+    _reward_scale_raw : int
+    _trace_decay_raw : int
+    a_minus : float
+    a_plus : float
+    enable_homeostasis : bool
+    learning_rate : float
+    reward_scale : float
+    rstdp_enable : bool
+    stdp_window : int
+    target_rate : float
+    tau_minus : float
+    tau_plus : float
+    trace_decay : float
+    \_\_init\_\_(self, a_plus: float, a_minus: float, tau_plus: float, tau_minus: float, stdp_window: int, learning_rate: float, rstdp_enable: bool, trace_decay: float, reward_scale: float, enable_homeostasis: bool, target_rate: float) None
+    \_\_post_init\_\_()
+    _q8_8(value: float) int
+  }
+  class STDPConfig {
+    a_minus : float
+    a_plus : float
+    lr : float
+    tau_minus : float
+    tau_plus : float
+    update_rule : str
+    w_max : float
+    w_min : float
+    \_\_init\_\_(self, lr: float, a_plus: float, a_minus: float, tau_plus: float, tau_minus: float, w_min: float, w_max: float, update_rule: str) None
+  }
+  class STDPConvolution {
+    in_channels : int
+    kernel_size : Union[int, Tuple[int, int]]
+    out_channels : int
+    padding : int
+    weight : Parameter
+    \_\_init\_\_(in_channels: int, out_channels: int, kernel_size: Union[int, Tuple[int, int]], weight_mean: float, weight_std: float, padding: int)
+    forward(x: Tensor) Tensor
+    get_pre_post_spikes(input_spikes: Tensor, output_spikes: Tensor, winners: List[Tuple[int, int, int]]) Tuple[Tensor, Tensor]
+  }
+  class STDPLearning {
+    config
+    post_spike_traces : defaultdict
+    pre_spike_traces : defaultdict
+    weight_updates : list
+    \_\_init\_\_(config: LearningConfig)
+    _compute_stdp_update(pre_id: int, post_id: int) float
+    add_spike(spike: SpikeEvent, is_post_synaptic: bool) None
+    compute_weight_updates(synapse_map: Dict[Tuple[int, int], float]) List[Dict]
+    reset_traces() None
+  }
+  class Sequential {
+    reset()
+  }
+  class SigmoidGrad {
+    backward(ctx, grad_output: Tensor) Tuple[Tensor, None]
+    forward(ctx, input: Tensor, thresh: float) Tensor
+  }
+  class SimulationResult {
+    duration : float
+    events : List[SpikeEvent]
+    \_\_init\_\_(self, events: List[SpikeEvent], duration: float) None
+  }
+  class SpikeCount {
+    penalty : float
+    target_rate : float
+    \_\_init\_\_(target_rate: float, penalty: float)
+    forward(spikes: Tensor, target: Tensor) Tensor
+  }
+  class SpikeDecoder {
+    duration : float
+    num_outputs : int
+    \_\_init\_\_(num_outputs: int, duration: float)
+    decode(spikes: List[SpikeEvent])* np.ndarray
+  }
+  class SpikeEncoder {
+    duration : float
+    num_neurons : int
+    \_\_init\_\_(num_neurons: int, duration: float)
+    encode(data: np.ndarray)* List[SpikeEvent]
+  }
+  class SpikeEvent {
+    layer_id : Optional[int]
+    neuron_id : int
+    timestamp : float
+    weight : float
+    \_\_init\_\_(self, neuron_id: int, timestamp: float, weight: float, layer_id: Optional[int]) None
+  }
+  class SpikeRate {
+    correct_rate : float
+    incorrect_rate : float
+    \_\_init\_\_(correct_rate: float, incorrect_rate: float)
+    forward(spikes: Tensor, target: Tensor) Tensor
+  }
+  class SpikingJellyConverter {
+    \_\_init\_\_(weight_scale: float, default_threshold_hw: int, default_leak_rate: int, default_refrac: int, hw_threshold_scale: float) None
+    _extract_layer_pairs(model: 'nn.Module') List[Tuple['nn.Module', Optional['nn.Module']]]
+    _extract_lif_params(lif_mod: 'nn.Module') Tuple[float, float, int]
+    _get_lif_classes() List[type]
+    _get_linear_classes() List[type]
+    convert(sj_model: 'nn.Module', input_shape: Tuple[int, ...], model_name: str) 'SNNModel'
+    from_numpy_stdp(weights: 'np.ndarray', thresholds: 'np.ndarray', weight_scale: float, model_name: str) 'SNNModel'
+  }
+  class SpikingNeuron {
+    hw_mode : bool
+    mem : NoneType, Optional[Tensor]
+    mem_bits : int
+    mem_max : int
+    mem_min : int
+    reset_mode : str
+    surrogate_fn
+    thresh : Parameter
+    weight_bits : int
+    \_\_init\_\_(thresh: float, reset: str, surrogate: str, scale: float, hw_mode: bool, learn_thresh: bool)
+    detach_state() None
+    fire(mem: Tensor) Tensor
+    init_state(shape: Tuple, device: torch.device, dtype: torch.dtype) Tensor
+    quantize(x: Tensor) Tensor
+    reset_mem(mem: Tensor, spk: Tensor) Tensor
+    reset_state() None
+  }
+  class SuperSpike {
+    backward(ctx, grad_output: Tensor) Tuple[Tensor, None]
+    forward(ctx, input: Tensor, thresh: float) Tensor
+  }
+  class SurrogateGradient {
+    scale : float
+    backward(ctx, grad_output: Tensor)* Tuple[Tensor, None]
+    forward(ctx, input: Tensor, thresh: float) Tensor
+  }
+  class Synapses {
+    _conn_index : Optional[int]
+    _weight_offset : Optional[int]
+    _weights : Optional[np.ndarray]
+    dst
+    name : str
+    num_weights : int
+    src
+    w : np.ndarray
+    \_\_init\_\_(src: NeuronGroup, dst: NeuronGroup, name: str)
+    \_\_repr\_\_()
+  }
+  class Temporal {
+    delays : Parameter
+    \_\_init\_\_(T: int, features: int)
+    forward(x: Tensor) Tensor
+  }
+  class TemporalDecoder {
+    decode(spikes: List[SpikeEvent]) np.ndarray
+  }
+  class TemporalEncoder {
+    \_\_init\_\_(num_neurons: int, duration: float)
+    encode(data: np.ndarray) List[SpikeEvent]
+  }
+  class TimeoutError {
+    operation : Optional[str]
+    timeout_duration : Optional[float]
+    \_\_init\_\_(message: str, timeout_duration: Optional[float], operation: Optional[str])
+  }
+  class TorchSNNLayer {
+    bias : Parameter
+    in_features : int
+    last_spike
+    mem
+    out_features : int
+    syn
+    tau_mem : float
+    tau_syn : float
+    threshold : float
+    weight : Parameter
+    \_\_init\_\_(in_features: int, out_features: int, tau_mem: float, tau_syn: float, threshold: float) None
+    forward(x: 'torch.Tensor') 'torch.Tensor'
+    reset_state() None
+  }
+  class Trainer {
+    T : int
+    device : str
+    history : dict
+    loss_fn : Module
+    model
+    optimizer : Optimizer
+    \_\_init\_\_(model: nn.Module, optimizer: torch.optim.Optimizer, loss_fn: nn.Module, device: str, T: int)
+    evaluate(dataloader, encoder) Tuple[float, float]
+    fit(train_loader, val_loader, epochs: int, encoder, verbose: bool)
+    train_epoch(dataloader, encoder) Tuple[float, float]
+  }
+  class WeightLoadError {
+    weight_index : Optional[int]
+    weight_shape : Optional[tuple]
+    \_\_init\_\_(message: str, weight_shape: Optional[tuple], weight_index: Optional[int])
+  }
+  class WeightUpdate {
+    delta : int
+    post_id : int
+    pre_id : int
+    timestamp : int
+    \_\_init\_\_(self, pre_id: int, post_id: int, delta: int, timestamp: int) None
+  }
+  class XRTBackend {
+    AP_DONE : int
+    AP_IDLE : int
+    AP_READY : int
+    AP_START : int
+    _raw_data_bo : Optional[Any]
+    _spike_input_bo : Optional[Any]
+    _spike_output_bo : Optional[Any]
+    device
+    kernel
+    regs
+    \_\_init\_\_(xclbin_path: str, device_index: int, reg_map: Optional[RegisterMap]) None
+    _allocate_bo(size: int) Any
+    load_weights(weights: np.ndarray) None
+    read_reg(offset: int) int
+    receive_spike_stream(max_size: int) bytes
+    run_kernel(timeout_sec: float) None
+    send_raw_frame(raw_data: bytes, run_kernel: bool) None
+    send_spike_stream(spike_data: bytes, run_kernel: bool) None
+    set_config(config: int) None
+    set_ctrl(ctrl: int) None
+    set_encoder_config(encoding_type: int, delta_threshold: int, delta_decay: int, num_channels: int, default_weight: int) None
+    set_learning_params(a_plus: float, a_minus: float, tau_plus: int, tau_minus: int, stdp_window: int, learning_rate: float, rstdp_enable: bool, trace_decay: float, reward_scale: float) None
+    set_mode(mode: int, encoder_enable: bool) None
+    set_reward(reward: int) None
+    set_time_steps(steps: int) None
+    write_reg(offset: int, value: int) None
+  }
+  class _HardwareBackend {
+    bitstream_path : str
+    dma : NoneType
+    fpga_ip : str
+    ip : NoneType
+    overlay : NoneType
+    \_\_init\_\_(bitstream_path: str, fpga_ip: str) None
+    _initialize() None
+    connect() None
+    disconnect() None
+  }
+  class _SoftwareBackend {
+    learning_enabled : bool
+    learning_engine : Optional[Union[STDPLearning, RSTDPLearning]]
+    model : Optional[SNNModel]
+    monitor
+    \_\_init\_\_() None
+    configure_learning(engine: Union[STDPLearning, RSTDPLearning]) None
+    configure_model(model: SNNModel) None
+    enable_learning(enable: bool) None
+    run(spikes: List[SpikeEvent], duration: float) SimulationResult
+  }
+  class _TorchSNNLayerStub {
+    \_\_init\_\_() None
+    reset_state() None
+  }
+  class _TorchUnavailable {
+    \_\_init\_\_()
+  }
+  class functional {
+    rate_decode(spikes, dim: int)
+    rate_encode(x, T: int)
+    spike(mem, thresh: float, surrogate: str)
+  }
+  class loss {
+    CrossEntropy
+    MSE
+    MemPotential
+    SpikeCount
+    SpikeRate
+  }
+  class surrogate {
+    atan
+    fast_sigmoid
+    get
+    pwl
+    sigmoid
+    super_spike
+  }
+  Delta --|> Encoder
+  Latency --|> Encoder
+  LatencyDecoder --|> Decoder
+  MaxDecoder --|> Decoder
+  Phase --|> Encoder
+  Poisson --|> Encoder
+  Rate --|> Encoder
+  RateDecoder --|> Decoder
+  Temporal --|> Encoder
+  BitstreamError --|> FPGAError
+  CommunicationError --|> FPGAError
+  ConfigurationError --|> FPGAError
+  KernelExecutionError --|> FPGAError
+  TimeoutError --|> FPGAError
+  WeightLoadError --|> FPGAError
+  ALIF --|> SpikingNeuron
+  ATan --|> SurrogateGradient
+  FastSigmoid --|> SurrogateGradient
+  IF --|> SpikingNeuron
+  Izhikevich --|> SpikingNeuron
+  LIF --|> SpikingNeuron
+  PLIF --|> LIF
+  PiecewiseLinear --|> SurrogateGradient
+  SigmoidGrad --|> SurrogateGradient
+  SuperSpike --|> SurrogateGradient
+  LatencyEncoder --|> SpikeEncoder
+  PoissonEncoder --|> SpikeEncoder
+  PopulationDecoder --|> SpikeDecoder
+  RateEncoder --|> SpikeEncoder
+  TemporalDecoder --|> SpikeDecoder
+  TemporalEncoder --|> SpikeEncoder
+  RSTDP --|> STDP
+  HWConnectivityTable --> CTEntry : table
+  HWEventRouter --> HWConnectivityTable : ct
+  HWAccurateLIFNeuron --> LIFNeuronParams : params
+  HWCoreGroup --> LIFNeuronParams : params
+  HWAccurateSTDPEngine --> STDPConfig : config
+  SNNAccelerator --> CompiledNetwork : _compiled_network
+  SNNNetwork --> NeuronGroup : _groups
+  SNNNetwork --> Synapses : _synapses
+  STDP --> STDPConfig : config
+  SNNAccelerator --> RegisterMap : _xrt_regmap
+  XRTBackend --> RegisterMap : regs
+  _HardwareBackend --* SNNAccelerator : _hardware_backend
+  _SoftwareBackend --* SNNAccelerator : _software_backend
+  AXIInterface --* PYNQ : axi
+  HWAccurateSTDPEngine --* HWAccurateSNNSimulator : stdp
+  HWConnectivityTable --* HWAccurateSNNSimulator : ct
+  HWEventRouter --* HWAccurateSNNSimulator : router
+  LIFNeuronState --* HWAccurateLIFNeuron : state
+  Conv2d --* SConv2d : conv
+  Linear --* SLSTM : fc_i
+  Linear --* SLSTM : fc_f
+  Linear --* SLSTM : fc_g
+  Linear --* SLSTM : fc_o
+  Linear --* SLinear : fc
+  Linear --* SRNN : fc_in
+  Linear --* SRNN : fc_rec
+  STDPLearning --* RSTDPLearning : stdp
+  CompiledNetwork --* SNNNetwork : _compiled
+  LIF --* SConv2d : lif
+  LIF --* SLSTM : lif_o
+  LIF --* SLinear : lif
+  LIF --* SRNN : lif
+  Intensity2Latency --* S1C1Transform : temporal_transform
+  PerformanceMonitor --* _SoftwareBackend : monitor
+  XRTBackend --* SNNAccelerator : _xrt_backend
+  SNNFPGAController --o PyTorchFPGABridge : fpga_controller
+  LearningConfig --o AdaptiveLearning : base_config
+  LearningConfig --o RSTDPLearning : config
+  LearningConfig --o STDPLearning : config
+  RSTDPLearning --o SNNAccelerator : learning_engine
+  RSTDPLearning --o _SoftwareBackend : learning_engine
+  STDPLearning --o SNNAccelerator : learning_engine
+  STDPLearning --o _SoftwareBackend : learning_engine
+  NeuronGroup --o Synapses : src
+  NeuronGroup --o Synapses : dst
+  SNNNetwork --o SNNAccelerator : _snn_network
+  ATan --o surrogate : atan
+  FastSigmoid --o surrogate : fast_sigmoid
+  PiecewiseLinear --o surrogate : pwl
+  SigmoidGrad --o surrogate : sigmoid
+  SuperSpike --o surrogate : super_spike
+  SNNModel --o _SoftwareBackend : model
+  SNNModel --o CPUvsSNNComparator : snn_model
+  IcarusSimulator --o RTLvsPythonComparator : rtl_sim
+  Filter --o S1C1Transform : filter
+  LateralIntensityInhibition --o S1C1Transform : lateral_inhibition
+  STDPConvolution --o STDP : conv
+  CrossEntropy --o loss : CrossEntropy
+  MSE --o loss : MSE
+  MemPotential --o loss : MemPotential
+  SpikeCount --o loss : SpikeCount
+  SpikeRate --o loss : SpikeRate
