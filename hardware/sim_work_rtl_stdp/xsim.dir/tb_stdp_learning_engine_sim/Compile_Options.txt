@@ -1,0 +1,1 @@
+-nolog -debug "typical" "tb_stdp_learning_engine" -s "tb_stdp_learning_engine_sim" 
