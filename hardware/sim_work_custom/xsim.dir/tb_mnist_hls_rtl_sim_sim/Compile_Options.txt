@@ -1,0 +1,1 @@
+-nolog -debug "typical" "tb_mnist_hls_rtl_sim" -s "tb_mnist_hls_rtl_sim_sim" 

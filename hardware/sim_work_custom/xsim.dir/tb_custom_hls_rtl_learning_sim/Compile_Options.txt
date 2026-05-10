@@ -1,0 +1,1 @@
+-nolog -debug "typical" "tb_custom_hls_rtl_learning" -s "tb_custom_hls_rtl_learning_sim" 
