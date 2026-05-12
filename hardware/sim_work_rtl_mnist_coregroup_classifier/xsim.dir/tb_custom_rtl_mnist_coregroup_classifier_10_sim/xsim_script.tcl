@@ -1,0 +1,1 @@
+xsim {tb_custom_rtl_mnist_coregroup_classifier_10_sim} -testplusarg SUBSET=10 -testplusarg TRAIN_FILE=classifier_train.mem -testplusarg TEST_FILE=classifier_test.mem -testplusarg TRAIN_LABEL_FILE=classifier_train_labels.txt -testplusarg TEST_LABEL_FILE=classifier_test_labels.txt -autoloadwcfg -runall

@@ -1,0 +1,217 @@
+{
+  "python_reference": {
+    "train_images": 1000,
+    "test_images": 200,
+    "accuracy": 0.265,
+    "confusion_matrix": [
+      [
+        0,
+        1,
+        0,
+        4,
+        0,
+        0,
+        0,
+        0,
+        12,
+        0
+      ],
+      [
+        0,
+        12,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        15,
+        0
+      ],
+      [
+        0,
+        1,
+        2,
+        5,
+        0,
+        0,
+        2,
+        1,
+        5,
+        0
+      ],
+      [
+        0,
+        0,
+        5,
+        9,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0
+      ],
+      [
+        0,
+        9,
+        0,
+        7,
+        0,
+        0,
+        0,
+        0,
+        12,
+        0
+      ],
+      [
+        0,
+        9,
+        0,
+        5,
+        0,
+        0,
+        0,
+        0,
+        6,
+        0
+      ],
+      [
+        0,
+        0,
+        10,
+        0,
+        0,
+        0,
+        10,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        4,
+        0,
+        0,
+        0,
+        11,
+        8,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        9,
+        0
+      ],
+      [
+        0,
+        8,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        11,
+        0
+      ]
+    ],
+    "per_class_accuracy": {
+      "0": 0.0,
+      "1": 0.42857142857142855,
+      "2": 0.125,
+      "3": 0.5625,
+      "4": 0.0,
+      "5": 0.0,
+      "6": 0.5,
+      "7": 0.4583333333333333,
+      "8": 0.9,
+      "9": 0.0
+    },
+    "assigned_labels": [
+      1,
+      0,
+      8,
+      6,
+      7,
+      3,
+      2,
+      0,
+      7,
+      2
+    ],
+    "train_winner_counts": [
+      366,
+      0,
+      338,
+      103,
+      29,
+      93,
+      56,
+      0,
+      7,
+      8
+    ],
+    "average_input_spikes_per_image": 18.86,
+    "average_output_spikes_per_image": 23.065,
+    "average_latency_cycles": 1.0,
+    "average_latency_us_100mhz": 0.01,
+    "throughput_images_per_second": 100000000.0,
+    "learned_weight_updates": 22783,
+    "weight_summary": {
+      "min": 0,
+      "max": 15,
+      "mean": 6.5078125,
+      "sum": 4165
+    }
+  },
+  "rtl_results": {
+    "10": {
+      "log": "C:\\Users\\96898\\Desktop\\Event-Driven-Spiking-Neural-Network-Accelerator-for-FPGA\\hardware\\sim_work_rtl_mnist_coregroup_classifier\\sim_tb_custom_rtl_mnist_coregroup_classifier_10.log",
+      "train_images": 10,
+      "test_images": 10,
+      "accuracy": 0.2,
+      "avg_latency_cycles": 1511,
+      "avg_latency_us_100mhz": 15.11,
+      "avg_output_spikes_per_image": 2.0,
+      "avg_input_spikes_per_image": 18.3,
+      "throughput_images_per_second": 66137,
+      "weight_min": 2,
+      "weight_max": 15,
+      "weight_sum": 5466,
+      "learned_weight_updates": 251,
+      "sim_cycles": 75050,
+      "status": "PASS"
+    },
+    "100": {
+      "log": "C:\\Users\\96898\\Desktop\\Event-Driven-Spiking-Neural-Network-Accelerator-for-FPGA\\hardware\\sim_work_rtl_mnist_coregroup_classifier\\sim_tb_custom_rtl_mnist_coregroup_classifier_100.log",
+      "train_images": 100,
+      "test_images": 100,
+      "accuracy": 0.09,
+      "avg_latency_cycles": 1541,
+      "avg_latency_us_100mhz": 15.41,
+      "avg_output_spikes_per_image": 1.29,
+      "avg_input_spikes_per_image": 19.12,
+      "throughput_images_per_second": 64850,
+      "weight_min": 0,
+      "weight_max": 15,
+      "weight_sum": 5253,
+      "learned_weight_updates": 1637,
+      "sim_cycles": 668481,
+      "status": "PASS"
+    }
+  },
+  "python_comparison_status": {
+    "10": "PASS",
+    "100": "PASS"
+  }
+}
