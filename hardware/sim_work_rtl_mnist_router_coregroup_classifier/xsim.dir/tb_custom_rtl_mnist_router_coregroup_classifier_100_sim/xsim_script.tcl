@@ -1,0 +1,1 @@
+xsim {tb_custom_rtl_mnist_router_coregroup_classifier_100_sim} -testplusarg SUBSET=100 -testplusarg TRAIN_FILE=classifier_train.mem -testplusarg TEST_FILE=classifier_test.mem -testplusarg TRAIN_LABEL_FILE=classifier_train_labels.txt -testplusarg TEST_LABEL_FILE=classifier_test_labels.txt -autoloadwcfg -runall
