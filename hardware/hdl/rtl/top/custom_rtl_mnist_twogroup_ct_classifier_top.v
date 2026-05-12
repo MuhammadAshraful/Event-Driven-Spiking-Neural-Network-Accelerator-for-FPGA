@@ -28,9 +28,12 @@ module custom_rtl_mnist_twogroup_ct_classifier_top #(
     parameter W_MIN              = 0,
     parameter W_MAX              = 15,
     parameter A_PLUS             = 2,
-    parameter OUTPUT_THRESHOLD   = 96,
+    parameter A_MINUS            = 1,
+    parameter HOMEOSTASIS_MARGIN = 0,
+    parameter OUTPUT_THRESHOLD   = 16,
     parameter INPUT_THRESHOLD    = 8,
-    parameter DRAIN_CYCLES       = 1600,
+    parameter NORMALIZE_SUM_MAX  = 700,
+    parameter DRAIN_CYCLES       = 6000,
     parameter WTA_INHIBIT_CYCLES = 512
 )(
     input  wire                          clk,
@@ -60,6 +63,9 @@ module custom_rtl_mnist_twogroup_ct_classifier_top #(
     output reg  [WEIGHT_WIDTH-1:0]       debug_weight_min,
     output reg  [WEIGHT_WIDTH-1:0]       debug_weight_max,
     output reg  [31:0]                   debug_weight_sum,
+    output reg  [OUTPUT_NEURONS*16-1:0]  debug_train_win_counts,
+    output reg  [15:0]                   debug_dead_outputs,
+    output reg  [15:0]                   debug_dominant_wins,
 
     output wire [31:0]                   router_routed_spike_count,
     output reg  [31:0]                   router_observed_spike_count,
@@ -79,6 +85,7 @@ module custom_rtl_mnist_twogroup_ct_classifier_top #(
     localparam [15:0] INPUT_THRESHOLD_VALUE = INPUT_THRESHOLD;
     localparam [15:0] OUTPUT_THRESHOLD_VALUE = OUTPUT_THRESHOLD;
     localparam [CORE_ID_WIDTH-1:0] OUTPUT_COUNT_ID = OUTPUT_NEURONS;
+    localparam [15:0] OUTPUT_NEURONS_VALUE = OUTPUT_NEURONS;
 
     localparam [3:0]
         ST_INIT_CT     = 4'd0,
@@ -91,6 +98,8 @@ module custom_rtl_mnist_twogroup_ct_classifier_top #(
 
     localparam [WEIGHT_WIDTH-1:0] W_MIN_VALUE = W_MIN;
     localparam [WEIGHT_WIDTH-1:0] W_MAX_VALUE = W_MAX;
+    localparam [15:0] HOMEOSTASIS_MARGIN_VALUE = HOMEOSTASIS_MARGIN;
+    localparam [15:0] NORMALIZE_SUM_MAX_VALUE = NORMALIZE_SUM_MAX;
 
     reg [3:0] state;
     reg [TIME_WIDTH-1:0] current_time;
@@ -229,31 +238,92 @@ module custom_rtl_mnist_twogroup_ct_classifier_top #(
     reg [INPUT_ID_WIDTH-1:0] init_src;
     reg [OUTPUT_ID_WIDTH-1:0] init_out;
     reg [INPUT_ID_WIDTH-1:0] learn_src;
+    reg [OUTPUT_ID_WIDTH-1:0] learn_out;
     reg [OUTPUT_ID_WIDTH-1:0] learned_winner;
     reg [3:0] flush_count;
 
     reg [WEIGHT_WIDTH-1:0] ct_weight_shadow [0:OUTPUT_NEURONS-1][0:INPUT_NEURONS-1];
     reg [EVENT_WEIGHT_WIDTH:0] active_trace [0:INPUT_NEURONS-1];
+    reg [15:0] train_win_count [0:OUTPUT_NEURONS-1];
+    reg [15:0] output_weight_sum [0:OUTPUT_NEURONS-1];
+    reg output_spike_seen [0:OUTPUT_NEURONS-1];
+    reg [15:0] group1_input_count [0:OUTPUT_NEURONS-1];
+    reg [15:0] group1_output_count [0:OUTPUT_NEURONS-1];
+    reg [15:0] image_output_count [0:OUTPUT_NEURONS-1];
+    reg [15:0] homeostasis_floor;
+    reg image_learning_active;
+    reg winner_seen;
+    reg any_group1_spike_seen;
+    reg [15:0] learned_winner_count;
+    wire learned_winner_overused =
+        learned_winner_count > (homeostasis_floor + HOMEOSTASIS_MARGIN_VALUE);
 
     function [WEIGHT_WIDTH-1:0] initial_weight;
         input [OUTPUT_ID_WIDTH-1:0] out_idx;
         input [INPUT_ID_WIDTH-1:0] in_idx;
         integer pattern;
+        integer row;
+        integer col;
+        integer center_r;
+        integer center_c;
+        integer dr;
+        integer dc;
+        integer dist_sum;
+        integer candidate;
     begin
-        pattern = (out_idx * 13 + in_idx * 7 + (in_idx >> 3) * 5 + (in_idx & 7) * 3) % 10;
-        initial_weight = 4 + pattern;
+        row = in_idx >> 3;
+        col = in_idx & 7;
+        center_r = (out_idx * 5 + 1) % 8;
+        center_c = (out_idx * 3 + 2) % 8;
+        dr = (row > center_r) ? (row - center_r) : (center_r - row);
+        dc = (col > center_c) ? (col - center_c) : (center_c - col);
+        dist_sum = dr + dc;
+        pattern = (out_idx * 11 + in_idx * 7) % 3;
+        candidate = 6 + pattern;
+        if (dist_sum < 7)
+            candidate = candidate + (7 - dist_sum);
+        if (candidate > W_MAX)
+            candidate = W_MAX;
+        initial_weight = candidate[WEIGHT_WIDTH-1:0];
     end
     endfunction
 
-    function [WEIGHT_WIDTH-1:0] next_active_weight;
+    function [WEIGHT_WIDTH-1:0] next_learning_weight;
         input [OUTPUT_ID_WIDTH-1:0] out_idx;
         input [INPUT_ID_WIDTH-1:0] in_idx;
         integer candidate;
     begin
-        candidate = ct_weight_shadow[out_idx][in_idx] + A_PLUS + (active_trace[in_idx] >> 3);
-        if (candidate > W_MAX)
-            candidate = W_MAX;
-        next_active_weight = candidate[WEIGHT_WIDTH-1:0];
+        if (out_idx == learned_winner) begin
+            if (learned_winner_overused) begin
+                candidate = ct_weight_shadow[out_idx][in_idx] - A_MINUS;
+                if (candidate < W_MIN)
+                    candidate = W_MIN;
+            end else if (output_weight_sum[out_idx] >= NORMALIZE_SUM_MAX_VALUE) begin
+                candidate = ct_weight_shadow[out_idx][in_idx];
+            end else begin
+                candidate = ct_weight_shadow[out_idx][in_idx] + A_PLUS + (active_trace[in_idx] >> 3);
+            end
+            if (candidate > W_MAX)
+                candidate = W_MAX;
+        end else if (!output_spike_seen[out_idx] ||
+                     train_win_count[out_idx] <= (homeostasis_floor + HOMEOSTASIS_MARGIN_VALUE)) begin
+            candidate = ct_weight_shadow[out_idx][in_idx];
+        end else begin
+            candidate = ct_weight_shadow[out_idx][in_idx] - A_MINUS;
+            if (candidate < W_MIN)
+                candidate = W_MIN;
+        end
+        next_learning_weight = candidate[WEIGHT_WIDTH-1:0];
+    end
+    endfunction
+
+    function [FANOUT_IDX_W-1:0] fanout_index_for;
+        input [INPUT_ID_WIDTH-1:0] src_idx;
+        input [OUTPUT_ID_WIDTH-1:0] out_idx;
+        integer idx;
+    begin
+        idx = (src_idx + out_idx) % OUTPUT_NEURONS;
+        fanout_index_for = idx[FANOUT_IDX_W-1:0];
     end
     endfunction
 
@@ -261,17 +331,17 @@ module custom_rtl_mnist_twogroup_ct_classifier_top #(
     wire init_request = (state == ST_INIT_CT) && router_learn_weight_ready;
     wire learn_src_active = (active_trace[learn_src] != 0);
     wire learn_request = (state == ST_LEARN) && learn_src_active && router_learn_weight_ready;
-    wire [WEIGHT_WIDTH-1:0] learned_next_weight = next_active_weight(learned_winner, learn_src);
+    wire [WEIGHT_WIDTH-1:0] learned_next_weight = next_learning_weight(learn_out, learn_src);
 
     wire router_learn_weight_valid = init_request || learn_request;
     wire [CORE_ID_WIDTH-1:0] router_learn_weight_src =
         init_request ? {1'b0, init_src} : {1'b0, learn_src};
     wire [CORE_ID_WIDTH-1:0] router_learn_weight_dst =
-        init_request ? {3'b000, init_out} : {3'b000, learned_winner};
+        init_request ? {3'b000, init_out} : {3'b000, learn_out};
     wire [WEIGHT_WIDTH-1:0] router_learn_weight_data =
         init_request ? ct_weight_shadow[init_out][init_src] : learned_next_weight;
     wire [FANOUT_IDX_W-1:0] router_learn_weight_fanout =
-        init_request ? init_out[FANOUT_IDX_W-1:0] : learned_winner[FANOUT_IDX_W-1:0];
+        init_request ? fanout_index_for(init_src, init_out) : fanout_index_for(learn_src, learn_out);
 
     wire router_learn_spike_valid;
     wire [GLOBAL_ID_WIDTH-1:0] router_learn_spike_src_id;
@@ -406,6 +476,44 @@ module custom_rtl_mnist_twogroup_ct_classifier_top #(
         group1_output_capture &&
         (cg1_out_id < OUTPUT_COUNT_ID);
     wire [OUTPUT_ID_WIDTH-1:0] group1_output_id = cg1_out_id[OUTPUT_ID_WIDTH-1:0];
+    reg [15:0] group1_output_win_count;
+
+    always @* begin
+        case (group1_output_id)
+            4'd0: group1_output_win_count = train_win_count[0];
+            4'd1: group1_output_win_count = train_win_count[1];
+            4'd2: group1_output_win_count = train_win_count[2];
+            4'd3: group1_output_win_count = train_win_count[3];
+            4'd4: group1_output_win_count = train_win_count[4];
+            4'd5: group1_output_win_count = train_win_count[5];
+            4'd6: group1_output_win_count = train_win_count[6];
+            4'd7: group1_output_win_count = train_win_count[7];
+            4'd8: group1_output_win_count = train_win_count[8];
+            4'd9: group1_output_win_count = train_win_count[9];
+            default: group1_output_win_count = 16'hFFFF;
+        endcase
+    end
+
+    always @* begin
+        case (learned_winner)
+            4'd0: learned_winner_count = train_win_count[0];
+            4'd1: learned_winner_count = train_win_count[1];
+            4'd2: learned_winner_count = train_win_count[2];
+            4'd3: learned_winner_count = train_win_count[3];
+            4'd4: learned_winner_count = train_win_count[4];
+            4'd5: learned_winner_count = train_win_count[5];
+            4'd6: learned_winner_count = train_win_count[6];
+            4'd7: learned_winner_count = train_win_count[7];
+            4'd8: learned_winner_count = train_win_count[8];
+            4'd9: learned_winner_count = train_win_count[9];
+            default: learned_winner_count = 16'hFFFF;
+        endcase
+    end
+
+    wire group1_output_eligible =
+        group1_output_win_count <= (homeostasis_floor + HOMEOSTASIS_MARGIN_VALUE);
+    wire wta_candidate_spike =
+        group1_classifier_spike && !winner_seen && group1_output_eligible;
 
     wire wta_winner_valid;
     wire [OUTPUT_ID_WIDTH-1:0] wta_winner_id;
@@ -420,7 +528,7 @@ module custom_rtl_mnist_twogroup_ct_classifier_top #(
         .clk(clk),
         .rst_n(rst_n),
         .enable(state == ST_RUN || state == ST_WAIT_DRAIN),
-        .spike_valid(group1_classifier_spike),
+        .spike_valid(wta_candidate_spike),
         .spike_neuron_id(group1_output_id),
         .winner_valid(wta_winner_valid),
         .winner_neuron_id(wta_winner_id),
@@ -432,7 +540,6 @@ module custom_rtl_mnist_twogroup_ct_classifier_top #(
     //-------------------------------------------------------------------------
     reg [TIME_WIDTH-1:0] image_start_time;
     reg [15:0] drain_count;
-    reg winner_seen;
     reg [TIME_WIDTH-1:0] first_winner_latency;
     reg [15:0] current_image_output_spikes;
     reg image_end_requested;
@@ -442,6 +549,14 @@ module custom_rtl_mnist_twogroup_ct_classifier_top #(
     integer metric_sum;
     integer metric_min;
     integer metric_max;
+    integer win_min_tmp;
+    integer dead_tmp;
+    integer dominant_tmp;
+    integer row_sum_tmp;
+    integer fallback_best_tmp;
+    integer fallback_valid_tmp;
+    integer fallback_winner_tmp;
+    integer select_best_spikes_tmp;
 
     task automatic update_weight_metrics;
     begin
@@ -463,6 +578,22 @@ module custom_rtl_mnist_twogroup_ct_classifier_top #(
     end
     endtask
 
+    task automatic update_homeostasis_metrics;
+    begin
+        dead_tmp = 0;
+        dominant_tmp = 0;
+        for (out_i = 0; out_i < OUTPUT_NEURONS; out_i = out_i + 1) begin
+            debug_train_win_counts[out_i*16 +: 16] <= train_win_count[out_i];
+            if (train_win_count[out_i] == 0)
+                dead_tmp = dead_tmp + 1;
+            if (train_win_count[out_i] > dominant_tmp)
+                dominant_tmp = train_win_count[out_i];
+        end
+        debug_dead_outputs  <= dead_tmp[15:0];
+        debug_dominant_wins <= dominant_tmp[15:0];
+    end
+    endtask
+
     always @(posedge clk) begin
         if (!rst_n) begin
             state                       <= ST_INIT_CT;
@@ -480,6 +611,9 @@ module custom_rtl_mnist_twogroup_ct_classifier_top #(
             debug_weight_min            <= W_MAX_VALUE;
             debug_weight_max            <= W_MIN_VALUE;
             debug_weight_sum            <= 32'd0;
+            debug_train_win_counts      <= {OUTPUT_NEURONS*16{1'b0}};
+            debug_dead_outputs          <= OUTPUT_NEURONS_VALUE;
+            debug_dominant_wins         <= 16'd0;
             router_observed_spike_count <= 32'd0;
             inter_group_routed_spikes   <= 32'd0;
             ct_init_write_count         <= 32'd0;
@@ -494,21 +628,35 @@ module custom_rtl_mnist_twogroup_ct_classifier_top #(
             init_src                    <= {INPUT_ID_WIDTH{1'b0}};
             init_out                    <= {OUTPUT_ID_WIDTH{1'b0}};
             learn_src                   <= {INPUT_ID_WIDTH{1'b0}};
+            learn_out                   <= {OUTPUT_ID_WIDTH{1'b0}};
             learned_winner              <= {OUTPUT_ID_WIDTH{1'b0}};
             flush_count                 <= 4'd0;
+            homeostasis_floor           <= 16'd0;
+            image_learning_active       <= 1'b0;
             image_start_time            <= {TIME_WIDTH{1'b0}};
             drain_count                 <= 16'd0;
             winner_seen                 <= 1'b0;
+            any_group1_spike_seen       <= 1'b0;
             first_winner_latency        <= {TIME_WIDTH{1'b0}};
             current_image_output_spikes <= 16'd0;
             image_end_requested         <= 1'b0;
 
             for (out_i = 0; out_i < OUTPUT_NEURONS; out_i = out_i + 1) begin
-                for (in_i = 0; in_i < INPUT_NEURONS; in_i = in_i + 1)
+                row_sum_tmp = 0;
+                for (in_i = 0; in_i < INPUT_NEURONS; in_i = in_i + 1) begin
                     ct_weight_shadow[out_i][in_i] <= initial_weight(out_i[OUTPUT_ID_WIDTH-1:0], in_i[INPUT_ID_WIDTH-1:0]);
+                    row_sum_tmp = row_sum_tmp + initial_weight(out_i[OUTPUT_ID_WIDTH-1:0], in_i[INPUT_ID_WIDTH-1:0]);
+                end
+                output_weight_sum[out_i] <= row_sum_tmp[15:0];
+                output_spike_seen[out_i] <= 1'b0;
+                group1_input_count[out_i] <= 16'd0;
+                group1_output_count[out_i] <= 16'd0;
+                image_output_count[out_i] <= 16'd0;
             end
             for (in_i = 0; in_i < INPUT_NEURONS; in_i = in_i + 1)
                 active_trace[in_i] <= {EVENT_WEIGHT_WIDTH+1{1'b0}};
+            for (out_i = 0; out_i < OUTPUT_NEURONS; out_i = out_i + 1)
+                train_win_count[out_i] <= 16'd0;
         end else begin
             image_done   <= 1'b0;
             winner_valid <= 1'b0;
@@ -518,6 +666,10 @@ module custom_rtl_mnist_twogroup_ct_classifier_top #(
 
             if (router_grp_in_valid[1])
                 inter_group_routed_spikes <= inter_group_routed_spikes + 32'd1;
+            if (router_grp_in_valid[1] &&
+                (router_grp_in_dest_id[CORE_ID_WIDTH +: CORE_ID_WIDTH] < OUTPUT_COUNT_ID))
+                group1_input_count[router_grp_in_dest_id[CORE_ID_WIDTH +: OUTPUT_ID_WIDTH]] <=
+                    group1_input_count[router_grp_in_dest_id[CORE_ID_WIDTH +: OUTPUT_ID_WIDTH]] + 16'd1;
 
             if (group0_spike_pending && router_grp_spike_ready[0])
                 group0_spike_pending <= 1'b0;
@@ -537,21 +689,21 @@ module custom_rtl_mnist_twogroup_ct_classifier_top #(
                 total_group0_spikes <= total_group0_spikes + 32'd1;
             if (group1_output_capture)
                 total_group1_spikes <= total_group1_spikes + 32'd1;
+            if (group1_classifier_spike) begin
+                output_spike_seen[group1_output_id] <= 1'b1;
+                group1_output_count[group1_output_id] <= group1_output_count[group1_output_id] + 16'd1;
+                image_output_count[group1_output_id] <= image_output_count[group1_output_id] + 16'd1;
+                if (!any_group1_spike_seen) begin
+                    any_group1_spike_seen <= 1'b1;
+                    first_winner_latency  <= current_time - image_start_time;
+                end
+            end
 
             if (router_event_pending && !router_event_issued && router_ext_ready)
                 router_event_issued <= 1'b1;
             if (router_grp_in_valid[0]) begin
                 router_event_pending <= 1'b0;
                 router_event_issued  <= 1'b0;
-            end
-
-            if (group1_classifier_spike)
-                current_image_output_spikes <= current_image_output_spikes + 16'd1;
-
-            if (wta_winner_valid && !winner_seen) begin
-                winner_seen          <= 1'b1;
-                learned_winner       <= wta_winner_id;
-                first_winner_latency <= current_time - image_start_time;
             end
 
             case (state)
@@ -590,8 +742,20 @@ module custom_rtl_mnist_twogroup_ct_classifier_top #(
                         first_winner_latency        <= {TIME_WIDTH{1'b0}};
                         current_image_output_spikes <= 16'd0;
                         image_end_requested         <= 1'b0;
+                        image_learning_active       <= learning_enable;
+                        any_group1_spike_seen       <= 1'b0;
+                        win_min_tmp = train_win_count[0];
+                        for (out_i = 1; out_i < OUTPUT_NEURONS; out_i = out_i + 1) begin
+                            if (train_win_count[out_i] < win_min_tmp)
+                                win_min_tmp = train_win_count[out_i];
+                        end
+                        homeostasis_floor <= win_min_tmp[15:0];
                         for (in_i = 0; in_i < INPUT_NEURONS; in_i = in_i + 1)
                             active_trace[in_i] <= {EVENT_WEIGHT_WIDTH+1{1'b0}};
+                        for (out_i = 0; out_i < OUTPUT_NEURONS; out_i = out_i + 1)
+                            output_spike_seen[out_i] <= 1'b0;
+                        for (out_i = 0; out_i < OUTPUT_NEURONS; out_i = out_i + 1)
+                            image_output_count[out_i] <= 16'd0;
                     end
 
                     if (event_valid && event_ready) begin
@@ -620,8 +784,43 @@ module custom_rtl_mnist_twogroup_ct_classifier_top #(
 
                 ST_WAIT_DRAIN: begin
                     if (drain_count >= DRAIN_CYCLES) begin
-                        if (learning_enable && winner_seen) begin
+                        fallback_valid_tmp = 0;
+                        fallback_winner_tmp = 0;
+                        fallback_best_tmp = 65535;
+                        select_best_spikes_tmp = -1;
+
+                        if (image_learning_active) begin
+                            for (out_i = 0; out_i < OUTPUT_NEURONS; out_i = out_i + 1) begin
+                                if (image_output_count[out_i] != 0 &&
+                                    (train_win_count[out_i] < fallback_best_tmp ||
+                                     (train_win_count[out_i] == fallback_best_tmp &&
+                                      image_output_count[out_i] > select_best_spikes_tmp))) begin
+                                    fallback_valid_tmp = 1;
+                                    fallback_winner_tmp = out_i;
+                                    fallback_best_tmp = train_win_count[out_i];
+                                    select_best_spikes_tmp = image_output_count[out_i];
+                                end
+                            end
+                        end else begin
+                            for (out_i = 0; out_i < OUTPUT_NEURONS; out_i = out_i + 1) begin
+                                if (image_output_count[out_i] != 0 &&
+                                    image_output_count[out_i] > select_best_spikes_tmp) begin
+                                    fallback_valid_tmp = 1;
+                                    fallback_winner_tmp = out_i;
+                                    select_best_spikes_tmp = image_output_count[out_i];
+                                end
+                            end
+                        end
+
+                        if (fallback_valid_tmp) begin
+                            winner_seen                 <= 1'b1;
+                            learned_winner              <= fallback_winner_tmp[OUTPUT_ID_WIDTH-1:0];
+                            current_image_output_spikes <= 16'd1;
+                        end
+
+                        if (image_learning_active && fallback_valid_tmp) begin
                             learn_src <= {INPUT_ID_WIDTH{1'b0}};
+                            learn_out <= {OUTPUT_ID_WIDTH{1'b0}};
                             state     <= ST_LEARN;
                         end else begin
                             state <= ST_DONE;
@@ -638,19 +837,31 @@ module custom_rtl_mnist_twogroup_ct_classifier_top #(
                             state       <= ST_LEARN_FLUSH;
                         end else begin
                             learn_src <= learn_src + 1'b1;
+                            learn_out <= {OUTPUT_ID_WIDTH{1'b0}};
                         end
                     end else if (learn_request) begin
-                        if (learned_next_weight != ct_weight_shadow[learned_winner][learn_src]) begin
+                        if (learned_next_weight != ct_weight_shadow[learn_out][learn_src]) begin
                             total_ct_changed_weights <= total_ct_changed_weights + 32'd1;
                             ct_learned_update_count  <= ct_learned_update_count + 32'd1;
+                            if (learned_next_weight > ct_weight_shadow[learn_out][learn_src])
+                                output_weight_sum[learn_out] <= output_weight_sum[learn_out] +
+                                    (learned_next_weight - ct_weight_shadow[learn_out][learn_src]);
+                            else
+                                output_weight_sum[learn_out] <= output_weight_sum[learn_out] -
+                                    (ct_weight_shadow[learn_out][learn_src] - learned_next_weight);
                         end
-                        ct_weight_shadow[learned_winner][learn_src] <= learned_next_weight;
+                        ct_weight_shadow[learn_out][learn_src] <= learned_next_weight;
 
-                        if (learn_src == INPUT_NEURONS-1) begin
-                            flush_count <= 4'd0;
-                            state       <= ST_LEARN_FLUSH;
+                        if (learn_out == OUTPUT_NEURONS-1) begin
+                            learn_out <= {OUTPUT_ID_WIDTH{1'b0}};
+                            if (learn_src == INPUT_NEURONS-1) begin
+                                flush_count <= 4'd0;
+                                state       <= ST_LEARN_FLUSH;
+                            end else begin
+                                learn_src <= learn_src + 1'b1;
+                            end
                         end else begin
-                            learn_src <= learn_src + 1'b1;
+                            learn_out <= learn_out + 1'b1;
                         end
                     end
                 end
@@ -665,6 +876,9 @@ module custom_rtl_mnist_twogroup_ct_classifier_top #(
                 end
 
                 ST_DONE: begin
+                    if (image_learning_active && winner_seen)
+                        train_win_count[learned_winner] <= train_win_count[learned_winner] + 16'd1;
+                    update_homeostasis_metrics;
                     image_done               <= 1'b1;
                     winner_valid             <= winner_seen;
                     winner_id                <= learned_winner;

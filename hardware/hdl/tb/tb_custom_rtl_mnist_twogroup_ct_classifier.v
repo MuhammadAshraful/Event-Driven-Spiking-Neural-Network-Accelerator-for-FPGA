@@ -39,6 +39,9 @@ module tb_custom_rtl_mnist_twogroup_ct_classifier;
     wire [7:0] debug_weight_min;
     wire [7:0] debug_weight_max;
     wire [31:0] debug_weight_sum;
+    wire [159:0] debug_train_win_counts;
+    wire [15:0] debug_dead_outputs;
+    wire [15:0] debug_dominant_wins;
     wire [31:0] router_routed_spike_count;
     wire [31:0] router_observed_spike_count;
     wire [31:0] inter_group_routed_spikes;
@@ -63,6 +66,7 @@ module tb_custom_rtl_mnist_twogroup_ct_classifier;
     integer assigned_labels [0:9];
     integer confusion [0:9][0:9];
     integer output_win_counts [0:9];
+    integer train_output_win_counts [0:9];
     integer train_event_count;
     integer test_event_count;
     integer train_image_count;
@@ -111,6 +115,9 @@ module tb_custom_rtl_mnist_twogroup_ct_classifier;
         .debug_weight_min(debug_weight_min),
         .debug_weight_max(debug_weight_max),
         .debug_weight_sum(debug_weight_sum),
+        .debug_train_win_counts(debug_train_win_counts),
+        .debug_dead_outputs(debug_dead_outputs),
+        .debug_dominant_wins(debug_dominant_wins),
         .router_routed_spike_count(router_routed_spike_count),
         .router_observed_spike_count(router_observed_spike_count),
         .inter_group_routed_spikes(inter_group_routed_spikes),
@@ -314,15 +321,19 @@ module tb_custom_rtl_mnist_twogroup_ct_classifier;
         integer had_winner;
         integer latency;
         integer out_spikes;
+        integer out_idx;
     begin
+        for (out_idx = 0; out_idx < 10; out_idx = out_idx + 1)
+            train_output_win_counts[out_idx] = 0;
         learning_enable <= 1'b1;
         repeat (5) @(posedge clk);
         for (img = 0; img < train_image_count; img = img + 1) begin
             run_image(img, train_event_count, train_cycle, train_neuron, train_weight, train_image,
                       winner, had_winner, latency, out_spikes);
-            if ((img % 25) == 0)
-                $display("twogroup train image=%0d winner=%0d valid=%0d out_spikes=%0d latency=%0d",
-                         img, winner, had_winner, out_spikes, latency);
+            if (had_winner)
+                train_output_win_counts[winner] = train_output_win_counts[winner] + 1;
+            $display("twogroup train image=%0d winner=%0d valid=%0d out_spikes=%0d latency=%0d",
+                     img, winner, had_winner, out_spikes, latency);
         end
         learning_enable <= 1'b0;
     end
@@ -421,6 +432,12 @@ module tb_custom_rtl_mnist_twogroup_ct_classifier;
         integer avg_group0_x1000;
         integer avg_group1_x1000;
         integer throughput_ips;
+        integer dead_outputs;
+        integer dominant_wins;
+        integer dominant_output;
+        integer dominant_ratio_permille;
+        integer train_dead_outputs;
+        integer train_dominant_wins;
 
         pass_count = 0;
         fail_count = 0;
@@ -459,6 +476,26 @@ module tb_custom_rtl_mnist_twogroup_ct_classifier;
         avg_group0_x1000 = (total_group0_spikes * 1000) / total_images;
         avg_group1_x1000 = (total_group1_spikes * 1000) / total_images;
         throughput_ips = 100000000 / (avg_latency + 1);
+        dead_outputs = 0;
+        dominant_wins = 0;
+        dominant_output = 0;
+        for (integer usage_idx = 0; usage_idx < 10; usage_idx = usage_idx + 1) begin
+            if (output_win_counts[usage_idx] == 0)
+                dead_outputs = dead_outputs + 1;
+            if (output_win_counts[usage_idx] > dominant_wins) begin
+                dominant_wins = output_win_counts[usage_idx];
+                dominant_output = usage_idx;
+            end
+        end
+        dominant_ratio_permille = (dominant_wins * 1000) / train_image_count;
+        train_dead_outputs = 0;
+        train_dominant_wins = 0;
+        for (integer train_usage_idx = 0; train_usage_idx < 10; train_usage_idx = train_usage_idx + 1) begin
+            if (train_output_win_counts[train_usage_idx] == 0)
+                train_dead_outputs = train_dead_outputs + 1;
+            if (train_output_win_counts[train_usage_idx] > train_dominant_wins)
+                train_dominant_wins = train_output_win_counts[train_usage_idx];
+        end
 
         $display("twogroup confusion matrix:");
         for (integer r = 0; r < 10; r = r + 1) begin
@@ -467,6 +504,21 @@ module tb_custom_rtl_mnist_twogroup_ct_classifier;
                      confusion[r][0], confusion[r][1], confusion[r][2], confusion[r][3], confusion[r][4],
                      confusion[r][5], confusion[r][6], confusion[r][7], confusion[r][8], confusion[r][9]);
         end
+        $display("TWOGROUP_CT_ASSIGN_WIN_COUNTS: %0d %0d %0d %0d %0d %0d %0d %0d %0d %0d",
+                 output_win_counts[0], output_win_counts[1], output_win_counts[2], output_win_counts[3], output_win_counts[4],
+                 output_win_counts[5], output_win_counts[6], output_win_counts[7], output_win_counts[8], output_win_counts[9]);
+        $display("TWOGROUP_CT_ASSIGNED_LABELS: %0d %0d %0d %0d %0d %0d %0d %0d %0d %0d",
+                 assigned_labels[0], assigned_labels[1], assigned_labels[2], assigned_labels[3], assigned_labels[4],
+                 assigned_labels[5], assigned_labels[6], assigned_labels[7], assigned_labels[8], assigned_labels[9]);
+        $display("TWOGROUP_CT_TRAIN_WIN_COUNTS: %0d %0d %0d %0d %0d %0d %0d %0d %0d %0d",
+                 train_output_win_counts[0], train_output_win_counts[1], train_output_win_counts[2], train_output_win_counts[3], train_output_win_counts[4],
+                 train_output_win_counts[5], train_output_win_counts[6], train_output_win_counts[7], train_output_win_counts[8], train_output_win_counts[9]);
+        $display("TWOGROUP_CT_GROUP1_INPUT_COUNTS: %0d %0d %0d %0d %0d %0d %0d %0d %0d %0d",
+                 dut.group1_input_count[0], dut.group1_input_count[1], dut.group1_input_count[2], dut.group1_input_count[3], dut.group1_input_count[4],
+                 dut.group1_input_count[5], dut.group1_input_count[6], dut.group1_input_count[7], dut.group1_input_count[8], dut.group1_input_count[9]);
+        $display("TWOGROUP_CT_GROUP1_OUTPUT_COUNTS: %0d %0d %0d %0d %0d %0d %0d %0d %0d %0d",
+                 dut.group1_output_count[0], dut.group1_output_count[1], dut.group1_output_count[2], dut.group1_output_count[3], dut.group1_output_count[4],
+                 dut.group1_output_count[5], dut.group1_output_count[6], dut.group1_output_count[7], dut.group1_output_count[8], dut.group1_output_count[9]);
 
         check("CT initialized 64x10 inter-group entries through router path", ct_init_write_count == 640);
         check("group 0 input neurons fired naturally", total_group0_spikes > 0);
@@ -477,14 +529,15 @@ module tb_custom_rtl_mnist_twogroup_ct_classifier;
         check("direct CT/core_group learning writes avoided", direct_ct_write_count == 0 && direct_learning_write_count == 0);
         check("assignment and test images processed", test_image_count > 0 && train_image_count > 0);
 
-        $display("MNIST_TWOGROUP_CT_RTL_SUMMARY subset=%0s train_images=%0d test_images=%0d accuracy_permille=%0d avg_latency_cycles=%0d avg_output_spikes_x1000=%0d avg_input_spikes_x1000=%0d avg_group0_spikes_x1000=%0d avg_group1_spikes_x1000=%0d throughput_images_per_sec=%0d ct_entries=640 weight_min=%0d weight_max=%0d weight_sum=%0d ct_changed_weights=%0d ct_learned_updates=%0d ct_init_writes=%0d router_routed_spikes=%0d router_observed_spikes=%0d inter_group_routed_spikes=%0d direct_learning_writes=%0d direct_ct_writes=%0d sim_cycles=%0d",
+        $display("MNIST_TWOGROUP_CT_RTL_SUMMARY subset=%0s train_images=%0d test_images=%0d accuracy_permille=%0d avg_latency_cycles=%0d avg_output_spikes_x1000=%0d avg_input_spikes_x1000=%0d avg_group0_spikes_x1000=%0d avg_group1_spikes_x1000=%0d throughput_images_per_sec=%0d ct_entries=640 weight_min=%0d weight_max=%0d weight_sum=%0d ct_changed_weights=%0d ct_learned_updates=%0d ct_init_writes=%0d router_routed_spikes=%0d router_observed_spikes=%0d inter_group_routed_spikes=%0d direct_learning_writes=%0d direct_ct_writes=%0d dead_outputs=%0d dominant_output=%0d dominant_wins=%0d dominant_ratio_permille=%0d train_dead_outputs=%0d train_dominant_wins=%0d sim_cycles=%0d",
                  subset_name, train_image_count, test_image_count, accuracy_permille,
                  avg_latency, avg_output_x1000, avg_input_x1000, avg_group0_x1000,
                  avg_group1_x1000, throughput_ips, debug_weight_min, debug_weight_max,
                  debug_weight_sum, total_ct_changed_weights, ct_learned_update_count,
                  ct_init_write_count, router_routed_spike_count, router_observed_spike_count,
                  inter_group_routed_spikes, direct_learning_write_count, direct_ct_write_count,
-                 sim_cycle);
+                 dead_outputs, dominant_output, dominant_wins, dominant_ratio_permille,
+                 train_dead_outputs, train_dominant_wins, sim_cycle);
 
         if (fail_count != 0) begin
             $display("*** MNIST TWOGROUP CT CLASSIFIER RTL TEST FAILED ***");

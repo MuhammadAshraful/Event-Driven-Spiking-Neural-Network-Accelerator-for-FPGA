@@ -27,7 +27,7 @@ The connectivity table stores 640 inter-group entries:
 
 - source group: `0`
 - source neuron: `0..63`
-- fanout index: `0..9`
+- fanout index: permuted per source neuron, `(src + dst) % 10`
 - destination group: `1`
 - destination neuron: `0..9`
 - excitatory valid weight
@@ -44,7 +44,7 @@ MNIST event
   -> event_router_ng inter-group delivery
   -> core_group 1 output neuron
   -> natural group 1 spike
-  -> WTA winner
+  -> window-level WTA winner
 ```
 
 ## Learning Flow
@@ -53,8 +53,12 @@ Training is unsupervised:
 
 - labels are not used during training
 - no teacher post-spikes are injected
-- WTA selects the first natural group 1 output spike per image window
+- group 1 output spikes are counted over the image window
+- WTA chooses one natural spiking output per image
+- during training, homeostasis prefers the least-used natural spiking output
 - active input neurons strengthen CT weights to the winning output neuron
+- overused active outputs can receive LTD/anti-Hebbian weakening
+- incoming output weight sums are softly capped to reduce runaway growth
 
 Learned inter-group updates use:
 
@@ -63,7 +67,7 @@ Learned inter-group updates use:
 - `learn_weight_src = active input neuron`
 - `learn_weight_dst_group = 1`
 - `learn_weight_dst = winning output neuron`
-- `learn_weight_fanout_idx = winning output neuron`
+- `learn_weight_fanout_idx = (src + dst) % 10`
 - `learn_weight_is_inter = 1`
 
 `event_router_ng` forwards these requests to `ct_cfg_*`, and
@@ -74,8 +78,10 @@ writes are intentionally avoided in the training path.
 
 - Only two core groups are active.
 - The input group uses one local spike per active MNIST event.
-- WTA is still wrapper-level logic.
+- WTA/homeostasis is still wrapper-level logic.
 - Accuracy is low because the milestone prioritizes architecture fidelity.
+- The latest tuning reduced one-neuron collapse, but `mnist100` accuracy is
+  still low and needs better prototype formation.
 - No 16-group partitioning or larger routing topology is used yet.
 
 ## Commands
