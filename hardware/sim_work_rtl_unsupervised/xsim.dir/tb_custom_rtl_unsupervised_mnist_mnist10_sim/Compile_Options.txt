@@ -1,0 +1,1 @@
+-nolog -debug "typical" "tb_custom_rtl_unsupervised_mnist" -s "tb_custom_rtl_unsupervised_mnist_mnist10_sim" 

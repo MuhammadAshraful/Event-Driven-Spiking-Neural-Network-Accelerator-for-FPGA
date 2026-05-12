@@ -1,0 +1,1 @@
+-nolog -debug "typical" "tb_custom_rtl_unsupervised_learning" -s "tb_custom_rtl_unsupervised_learning_sim" 

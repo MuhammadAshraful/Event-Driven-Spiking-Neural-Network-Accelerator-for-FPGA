@@ -17,13 +17,19 @@ if {[file pathtype $script_path] ne "absolute"} {
 set script_dir [file dirname $script_path]
 set repo_root  [file join $script_dir ".." ".."]
 
-if {![file exists [file join $repo_root "README.md"]] && [file exists [file join [pwd] "README.md"]]} {
-    set repo_root [pwd]
-}
-if {![file exists [file join $repo_root "README.md"]] && [info exists env(USERPROFILE)]} {
+set candidate_roots [list]
+if {[info exists env(USERPROFILE)]} {
     set desktop_root [file join [string map {\\ /} $env(USERPROFILE)] "Desktop" "Event-Driven-Spiking-Neural-Network-Accelerator-for-FPGA"]
-    if {[file exists [file join $desktop_root "README.md"]]} {
-        set repo_root $desktop_root
+    lappend candidate_roots $desktop_root
+}
+lappend candidate_roots "C:/Users/96898/Desktop/Event-Driven-Spiking-Neural-Network-Accelerator-for-FPGA"
+lappend candidate_roots $repo_root
+lappend candidate_roots [pwd]
+
+foreach candidate $candidate_roots {
+    if {[file exists [file join $candidate "README.md"]]} {
+        set repo_root $candidate
+        break
     }
 }
 
@@ -96,10 +102,17 @@ proc run_one {name top files inc_dir} {
     set fh [open $sim_log r]
     set data [read $fh]
     close $fh
+    set sim_failed 0
     foreach line [split $data "\n"] {
         if {[regexp {(\[PASS\]|\[FAIL\]|Results:|PASSED|FAILED|ERROR|initial weight|updated weight|output spikes|STDP rule)} $line]} {
             puts $line
         }
+        if {[regexp {(\[FAIL\]|\[ERROR\]|FAILED)} $line]} {
+            set sim_failed 1
+        }
+    }
+    if {$sim_failed} {
+        error "$name reported FAIL; see $sim_log"
     }
 }
 
