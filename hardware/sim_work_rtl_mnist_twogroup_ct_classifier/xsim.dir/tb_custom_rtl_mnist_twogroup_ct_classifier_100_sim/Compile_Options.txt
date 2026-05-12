@@ -1,0 +1,1 @@
+-nolog -debug "typical" "tb_custom_rtl_mnist_twogroup_ct_classifier" -s "tb_custom_rtl_mnist_twogroup_ct_classifier_100_sim" 
